@@ -1,0 +1,20 @@
+[project]
+name = "breedbase-client"
+version = "0.1.0"
+description = "BrAPI MCP server for Breedbase databases"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas",
+    "requests",
+    "pydantic>=2.0",
+    "authlib",
+    "python-dotenv",
+    "mcp[cli]>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
