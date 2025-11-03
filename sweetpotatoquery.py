@@ -1,3 +1,21 @@
+"""
+SweetPotatoBase MCP
+
+This MCP (Model Context Protocol) server provides AI agents with tools to query
+the SweetPotatoBase BrAPI endpoints and retrieve breeding data.
+
+Version: 0.1.0
+Last Updated: 2024-11-3
+Author: Jerry Yu
+
+Changelog:
+- 0.0.0 (2024-10-29): Initial MCP server implementation
+  * Added all_functions() to list available endpoints
+  * Added specific_function() to get endpoint details
+  * Added general_get() to query and save BrAPI data as CSV
+  * Integrated with BrAPIClient for OAuth authentication
+"""
+
 #!/usr/bin/env python3
 import sys
 import os

@@ -1,5 +1,5 @@
 """
-SweetPotatoBase MCP Server
+SweetPotatoBase Client
 
 This MCP (Model Context Protocol) server provides AI agents with tools to query
 the SweetPotatoBase BrAPI endpoints and retrieve breeding data.
