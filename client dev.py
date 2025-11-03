@@ -325,6 +325,9 @@ class BrAPIClient_dev:
                                          max_pages=max_pages,
                                          pagesize=pagesize)
 
+        # Record Request in Ledger
+        self._update_endpoint(service)
+
         # Convert to DataFrame if requested
         if dataframe:
             if len(response) > 0 and len(response[0]) == 1 and 'data' in response[0]:
@@ -333,6 +336,9 @@ class BrAPIClient_dev:
                 return pd.json_normalize(response)
 
         return response
+    
+    def _update_endpoint(service: str = None):
+
 
 # Testing if Needed   
 # sweetpotatobase = BrAPIClient_dev(

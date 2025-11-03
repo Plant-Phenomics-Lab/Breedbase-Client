@@ -3,8 +3,8 @@ import sys
 import os
 import io
 import pandas as pd
-import json
-from typing import Optional
+# import json
+# from typing import Optional
 
 # # Save original stdout for MCP protocol
 # _original_stdout = sys.stdout
@@ -74,7 +74,7 @@ def general_get(service: str,
     
     # Set default filepath if not provided
     if not filepath:
-        filepath = "C:\\Users\\yujer\\L_Documents\\Current Classes\\BreedbaseCsvs"
+        filepath = os.path.join(os.getcwd(),"Downloads")
     
     # Create directory if it doesn't exist
     os.makedirs(filepath, exist_ok=True)
