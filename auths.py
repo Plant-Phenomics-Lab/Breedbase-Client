@@ -21,6 +21,7 @@ import json
 import getpass
 from pathlib import Path
 from typing import Optional, Dict, Callable
+import os
 
 
 class BrAPIOAuth2Session(OAuth2Session):
@@ -58,7 +59,13 @@ class BrAPIOAuth2Session(OAuth2Session):
         """
         self.base_url = base_url.rstrip('/')
         self.token_url = f"{self.base_url}{token_endpoint}"
-        self.token_file = token_file
+        
+        # Create temp directory in current working directory
+        self.temp_dir = os.path.join(os.getcwd(), '.brapi_temp')
+        os.makedirs(self.temp_dir, exist_ok=True)
+        
+        # Store token file in temp directory
+        self.token_file = os.path.join(self.temp_dir, token_file)
 
         # Load existing token if available
         token = self._load_token()
@@ -89,7 +96,7 @@ class BrAPIOAuth2Session(OAuth2Session):
 
         # Write to file with pretty formatting
         Path(self.token_file).write_text(json.dumps(token, indent=2))
-        print(f"✓ Token saved to {self.token_file}")
+        print(f"[OK] Token saved to {self.token_file}")
 
     def _load_token(self) -> Optional[Dict]:
         """
@@ -100,13 +107,13 @@ class BrAPIOAuth2Session(OAuth2Session):
         """
         try:
             token_data = json.loads(Path(self.token_file).read_text())
-            print(f"✓ Loaded existing token from {self.token_file}")
+            print(f"[OK] Loaded existing token from {self.token_file}")
             return token_data
         except FileNotFoundError:
-            print(f"ℹ No existing token found at {self.token_file}")
+            print(f"[INFO] No existing token found at {self.token_file}")
             return None
         except json.JSONDecodeError as e:
-            print(f"⚠ Warning: Could not parse token file: {e}")
+            print(f"[WARNING] Could not parse token file: {e}")
             return None
 
     def is_authenticated(self) -> bool:
@@ -133,7 +140,7 @@ class BrAPIOAuth2Session(OAuth2Session):
         """
         if not self.is_authenticated():
             if login_callback:
-                print("⚠ Token expired or missing, re-authenticating...")
+                print("[WARNING] Token expired or missing, re-authenticating...")
                 login_callback()
             else:
                 raise RuntimeError(
@@ -265,7 +272,7 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
         self._save_token(token)
         self.login_time = time.time()
 
-        print(f"✓ Login successful! Authenticated as: {user_display_name}")
+        print(f"[OK] Login successful! Authenticated as: {user_display_name}")
 
         return token
 
@@ -280,18 +287,18 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
 
         try:
             Path(self.token_file).unlink()
-            print(f"✓ Token deleted from {self.token_file}")
+            print(f"[OK] Token deleted from {self.token_file}")
         except FileNotFoundError:
             pass
 
-        print("✓ Logged out successfully")
+        print("[OK] Logged out successfully")
 
     def _check_time(self):
         """
         Check before requests if token has expired. 
         """
         if time.time() > self.login_time + self.token.get('expires_in', 0):
-            print("⚠ Token has expired, logging in again.")
+            print("[WARNING] Token has expired, logging in again.")
             self.logout()
             self.login()
 
@@ -345,13 +352,13 @@ if __name__ == "__main__":
 
     # Check if already authenticated
     if client.is_authenticated():
-        print("\n📡 Testing authenticated request...")
+        print("\n[INFO] Testing authenticated request...")
         try:
             response = client.get(f"{client.base_url}/brapi/v2/serverinfo")
             server_info = response.json()
-            print(f"✓ Connected to: {server_info.get('result', {}).get('serverName', 'Unknown')}")
+            print(f"[OK] Connected to: {server_info.get('result', {}).get('serverName', 'Unknown')}")
         except Exception as e:
-            print(f"✗ Request failed: {e}")
+            print(f"[ERROR] Request failed: {e}")
     else:
         print("No valid token found. To test, run:")
         print("  from auths import create_sgn_session")

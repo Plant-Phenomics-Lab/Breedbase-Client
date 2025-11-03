@@ -4,12 +4,12 @@ import pydantic
 from typing import Optional, Dict, List, Any
 import requests
 from brapi_v2.manual import ServerInfo
-import tempfile
 import pandas as pd
 import json
+import os
 
 
-class BrAPIClient:
+class BrAPIClient_dev:
     """Client for interacting with SweetPotatoBase BrAPI endpoints"""
 
     def __init__(self, base_url: str = "https://sweetpotatobase.org/brapi/v2",
@@ -23,22 +23,26 @@ class BrAPIClient:
                 Args:
                     base_url: Base URL for BrAPI endpoints
                     """
+                # Initialize all attributes first to avoid AttributeError in __del__
                 self.base_url = base_url
                 self.username = username
                 self.password = password
                 self.form = form
+                self.temp_endpoints_path = None
+                self.servicelist = None
+                self.session = None
+                
+                # Now initialize (if these fail, __del__ won't crash)
                 self.session = self.get_client()
-                self.temp_endpoints_file = None
                 self.servicelist = self._get_valid_endpoints()
     
-    def __del__(self):
-        """Cleanup temp file when object is destroyed"""
-        if self.temp_endpoints_file:
-            try:
-                import os
-                os.unlink(self.temp_endpoints_file.name)
-            except:
-                pass
+    # def __del__(self):
+    #     """Cleanup temp file when object is destroyed"""
+    #     if hasattr(self, 'temp_endpoints_file') and self.temp_endpoints_file:
+    #         try:
+    #             os.unlink(self.temp_endpoints_file.name)
+    #         except:
+    #             pass
     
     def get_client(self):
         if self.form == "SGN":
@@ -71,7 +75,11 @@ class BrAPIClient:
             print(f"Error making request to {url}: {e}")
             return {}
 
-    def _fetch_all_pages(self, endpoint: str, params: Optional[Dict] = None, max_pages: int = 100) -> List[Dict]:
+    def _fetch_all_pages(self, 
+                         endpoint: str, 
+                         params: Optional[Dict] = None, 
+                         max_pages: int = 100,
+                         pagesize: int = 100) -> List[Dict]:
         """
         Fetch all pages of paginated results
 
@@ -86,7 +94,7 @@ class BrAPIClient:
         all_data = []
         page = 0
         params = params or {}
-        params['pageSize'] = 100  # Large page size for efficiency
+        params['pageSize'] = pagesize  # Large page size for efficiency
 
         while page < max_pages:
             params['page'] = page
@@ -121,26 +129,35 @@ class BrAPIClient:
         data = all_data
         return data
 
-    def _get_valid_endpoints(self):
+    def _get_valid_endpoints(self,clean=True):
         """Get valid endpoints based on server info and save to temp CSV file"""
+
+        # Check if File Exists, and delete if needed
+        # Create temp directory in current working directory
+        temp_dir = os.path.join(os.getcwd(), ".brapi_temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        self.temp_endpoints_path = f"{temp_dir}/{self.form}.csv"
+        if os.path.exists(self.temp_endpoints_path) and clean:
+            try:
+                os.remove(self.temp_endpoints_path)
+            except FileNotFoundError:
+                pass
+        
         serverinfo = self._make_request("/serverinfo")
         servicelist = [serv['service'] for serv in serverinfo['result']['calls']]
         all_endpoints = pd.read_csv('brapi_endpoints.csv')
         # all_endpoints = all_endpoints["status" != 0]
         valid_endpoints = all_endpoints[all_endpoints['service'].isin(servicelist)]
-
-        # Create temporary file - delete=False keeps it open for multiple reads
-        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False)
-        temp_file.close()  # Close the file handle first
-        valid_endpoints.to_csv(temp_file.name, index=False)  # Now pandas can write to it
-        self.temp_endpoints_file = temp_file
+        
+        # save csv
+        valid_endpoints.to_csv(f"{temp_dir}/{self.form}.csv",index=False)
         return servicelist
 
     def _load_endpoints_df(self) -> pd.DataFrame:
         """Load endpoints from temp CSV file"""
-        if not self.temp_endpoints_file:
+        if not self.temp_endpoints_path:
             raise RuntimeError("Valid endpoints file not initialized")
-        return pd.read_csv(self.temp_endpoints_file.name)
+        return pd.read_csv(self.temp_endpoints_path)
 
     def _load_endpoint_schema(self, service: str) -> Dict[str, Any]:
         """Load valid parameters schema for a service from temp CSV"""
@@ -153,7 +170,7 @@ class BrAPIClient:
         schema_str = endpoint_row.iloc[0]['dictionary_loc']
         return json.loads(schema_str)
 
-    def _format_parameters_help(self, service: str) -> None:
+    def format_parameters_help(self, service: str) -> None:
         """Format parameter information for help display"""
         endpoints_df = self._load_endpoints_df()
         endpoint_row = endpoints_df[endpoints_df['service'] == service]
@@ -183,7 +200,7 @@ class BrAPIClient:
 
         print(help_text)
 
-    def _show_all_services_help(self) -> None:
+    def show_all_services_help(self) -> None:
         """Show all available services with descriptions in a formatted table"""
         endpoints_df = self._load_endpoints_df()
 
@@ -261,7 +278,9 @@ class BrAPIClient:
                     dataframe: Optional[bool] = True,
                     DbID: Optional[str] = None,
                     params: Optional[Dict] = None,
-                    max_pages:Optional[Dict]=100):
+                    max_pages:Optional[int]=100,
+                    pagesize:Optional[int]=100
+                    ):
         """
         General Helper Function for BrAPI Output.
 
@@ -279,9 +298,9 @@ class BrAPIClient:
         # Handle help requests
         if help:
             if help is True:
-                self._show_all_services_help()
+                self.show_all_services_help()
             else:
-                self._format_parameters_help(help)
+                self.format_parameters_help(help)
             return None
 
         # Validate service exists
@@ -302,7 +321,9 @@ class BrAPIClient:
             endpoint = f"/{service}"
 
         # Make request
-        response = self._fetch_all_pages(endpoint, params=params, max_pages=max_pages)
+        response = self._fetch_all_pages(endpoint, params=params, 
+                                         max_pages=max_pages,
+                                         pagesize=pagesize)
 
         # Convert to DataFrame if requested
         if dataframe:
@@ -312,4 +333,13 @@ class BrAPIClient:
                 return pd.json_normalize(response)
 
         return response
+
+# Testing if Needed   
+# sweetpotatobase = BrAPIClient_dev(
+#     base_url="https://sweetpotatobase.org/brapi/v2",
+#     username="JerryHYu",
+#     password="$B1dX*JC$D!SeYpF"
+# )
+
+# sweetpotatobase.general_get(service="locations",pagesize=10,max_pages=1)
 
