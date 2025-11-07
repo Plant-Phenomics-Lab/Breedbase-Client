@@ -18,7 +18,8 @@ Changelog:
 
 #!/usr/bin/env python3
 import sys
-import os
+# import os
+from pathlib import Path
 import io
 import pandas as pd
 # import json
@@ -92,10 +93,11 @@ def general_get(service: str,
     
     # Set default filepath if not provided
     if not filepath:
-        filepath = os.path.join(os.getcwd(),"Downloads")
+        raise ValueError("Please Specify a Filepath")
     
+    filepath = Path(filepath)
     # Create directory if it doesn't exist
-    os.makedirs(filepath, exist_ok=True)
+    filepath.mkdir(parents=True,exist_ok=True)
     
     # Get the DataFrame
     df = sweetpotatobase.general_get(service=service,
@@ -138,7 +140,7 @@ def general_get(service: str,
 #         df = df.drop(columns=cols_to_drop)
     
     # Save cleaned CSV
-    csv_path = os.path.join(filepath, f"{service}.csv")
+    csv_path = filepath / f"{service}.csv"
     df.to_csv(csv_path, index=False)
     
 #     # Generate summary
@@ -155,6 +157,13 @@ Data types:
 """
     
     return summary
+
+@server.prompt()
+def tutorial() -> str:
+    """
+    Best Practices for Using BrAPI
+    """
+    return f"Use `all_functions` first in every chat to check which endpoints are avalible. \n - Use `specific_function` when you first try to call an endpoint always."
 
 
 # filepath = "C:\\Users\\yujer\\L_Documents\\Current Classes\\BreedbaseCsvs"
