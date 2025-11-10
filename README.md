@@ -20,6 +20,28 @@ uv sync
 
 # Test the Server
 !uv run mcp dev sweetpotatoquery.py
+
+# Attempt to Integrate to Claude Desktop (or to get config file)
+uv run mcp install sweetpotatoquery.py --name "Sweetpotatobasequery"
+```
+
+Note, this may not work automatically. Here are the configs that I used to get the client to work:
+
+```json
+#Claude Code and VsCode
+"sweetpotatobasequery": {
+      "command": "Path\\To\\uv\\uv.exe",
+      "args": [
+        "run",
+        "--directory",
+        "Loca\\Path\\Breedbase-Client",
+        "--with",
+        "mcp[cli]",
+        "mcp",
+        "run",
+        "sweetpotatoquery.py"
+      ]
+    }
 ```
 
 ### Production Setup
