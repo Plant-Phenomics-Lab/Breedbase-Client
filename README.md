@@ -27,6 +27,8 @@ uv run mcp install sweetpotatoquery.py --name "Sweetpotatobasequery"
 
 Note, this may not work automatically. Here are the configs that I used to get the client to work:
 
+- for vscode; Ctrl + shirt + P and find the MCP:Open User Configuration Setting
+
 ```json
 #Claude Code and VsCode
 "sweetpotatobasequery": {
