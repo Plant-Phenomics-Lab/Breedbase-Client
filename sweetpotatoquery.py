@@ -32,14 +32,19 @@ import pandas as pd
 # sys.stdout = sys.stderr
 
 # Now import everything (prints won't corrupt MCP)
+import os
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from client import BrAPIClient
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize client (prints go to stderr)
 sweetpotatobase = BrAPIClient(
     base_url="https://sweetpotatobase.org/brapi/v2",
-    username="JerryHYu",
-    password="$B1dX*JC$D!SeYpF"
+    username=os.getenv("SWEETPOTATOBASE_USERNAME"),
+    password=os.getenv("SWEETPOTATOBASE_PASSWORD")
 )
 
 # Create MCP server

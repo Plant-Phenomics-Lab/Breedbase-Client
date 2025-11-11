@@ -1,3 +1,4 @@
 # Temp Dir
 /.brapi_temp
 /Downloads
+.env

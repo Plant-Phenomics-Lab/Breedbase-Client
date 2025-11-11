@@ -352,12 +352,3 @@ class BrAPIClient:
 
         return response
 
-# Testing if Needed   
-sweetpotatobase = BrAPIClient(
-    base_url="https://sweetpotatobase.org/brapi/v2",
-    username="JerryHYu",
-    password="$B1dX*JC$D!SeYpF"
-)
-
-sweetpotatobase._fetch_all_pages(endpoint="/observations?studyDbId=4505&germplasmName=Hatteras",pagesize=10,max_pages=1)
-
