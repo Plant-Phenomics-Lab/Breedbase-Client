@@ -11,6 +11,7 @@ dependencies = [
     "python-dotenv",
     "mcp[cli]>=1.0.0",
     "groq>=0.33.0",
+    "pytest>=9.0.1",
 ]
 
 [build-system]
