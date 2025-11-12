@@ -128,11 +128,21 @@ class BrAPIClient:
             total_pages = pagination.get('totalPages', 1)
             total_pages = min(total_pages,max_pages)
 
-            if total_pages ==1:
-                 data = [response['result']]
-                 return data
+            # Normalize result to a flat list of row dicts for consistent return shape.
+            # Possible shapes returned by BrAPI 'result':
+            #  - {'data': [...], ...}             -> use the 'data' list
+            #  - [...]                             -> already a list of rows
+            #  - { ... } (single resource object) -> wrap as single-item list
+            result_obj = response['result']
+            if isinstance(result_obj, dict) and 'data' in result_obj:
+                data = result_obj.get('data', [])
+            elif isinstance(result_obj, list):
+                data = result_obj
+            elif isinstance(result_obj, dict):
+                # Single resource object — return as single-item list
+                data = [result_obj]
             else:
-                data = response['result'].get('data', [])
+                data = []
 
             if not data:
                 break
@@ -345,10 +355,7 @@ class BrAPIClient:
 
         # Convert to DataFrame if requested
         if dataframe:
-            if len(response) > 0 and len(response[0]) == 1 and 'data' in response[0]:
-                return pd.json_normalize(response[0]['data'])
-            else:
-                return pd.json_normalize(response)
+            return pd.json_normalize(response)
 
         return response
 
