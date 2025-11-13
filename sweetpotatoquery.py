@@ -34,8 +34,9 @@ import pandas as pd
 # Now import everything (prints won't corrupt MCP)
 import os
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 from client import BrAPIClient
+from logger import log_server_tool
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,22 +52,24 @@ sweetpotatobase = BrAPIClient(
 server = FastMCP("sweetpotatobasequery")
 
 @server.tool()
-def all_functions() -> str:
+async def all_functions(ctx: Context) -> str:
     """
-    Use inherent funcitonality of the client to get a list of all possible endpoints
+    Use inherent functionality of the client to get a list of all possible endpoints
     """
-    # Capture print output and return as string
-    captured = io.StringIO()
-    old_stdout = sys.stdout
-    sys.stdout = captured
-    try:
-        sweetpotatobase.general_get(help=True)
-        return captured.getvalue()
-    finally:
-        sys.stdout = old_stdout
+    async def _inner():
+        captured = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = captured
+        try:
+            sweetpotatobase.general_get(help=True)
+            return captured.getvalue()
+        finally:
+            sys.stdout = old_stdout
+    
+    return await log_server_tool(ctx, "all_functions", _inner)
 
 @server.tool()
-def specific_function(endpoint:str) -> str:
+def specific_function(ctx: Context, endpoint:str) -> str:
     """
     Get Data on a Specific Endpoint
     """
@@ -81,7 +84,8 @@ def specific_function(endpoint:str) -> str:
         sys.stdout = old_stdout
 
 @server.tool()
-def general_get(service: str, 
+def general_get(ctx: Context,
+                service: str, 
                 filepath: str = "",
                 max_pages: int = 100,
                 pagesize: int = 100) -> str:
