@@ -31,6 +31,7 @@ from dotenv import load_dotenv
 from auths import create_sgn_session
 from mcp.server.fastmcp import FastMCP
 from client_dev import BrAPIClient_dev
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -139,6 +140,23 @@ def general_get(service: str,
     # Data Cleaning
     # Remove columns that are entirely NA
     df = df.dropna(axis=1, how='all')
+
+    if service == 'images':
+        for index, row in df.iterrows():
+            image_name = str(row['imageName'])
+            image_url = row['imageURL']
+            image_path = str(filepath) + image_name
+            image_url = row['imageURL']
+            try:
+                response = requests.get(image_url, stream=True)
+                response.raise_for_status()
+
+                with open(image_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error downloading image: {e}")
     
     # # Convert lists and dicts to JSON strings for CSV compatibility
     # for col in df.columns:
