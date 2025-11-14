@@ -25,57 +25,78 @@ import pandas as pd
 # import json
 # from typing import Optional
 
-# # Save original stdout for MCP protocol
-# _original_stdout = sys.stdout
-
-# # Redirect ALL prints to stderr during imports
-# sys.stdout = sys.stderr
-
 # Now import everything (prints won't corrupt MCP)
 import os
 from dotenv import load_dotenv
+from auths import create_sgn_session
 from mcp.server.fastmcp import FastMCP
-from client import BrAPIClient
+from client_dev import BrAPIClient_dev
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Initialize client (prints go to stderr)
-sweetpotatobase = BrAPIClient(
-    base_url="https://sweetpotatobase.org/brapi/v2",
+# Now Sweetpotatobase
+# Auth Session
+sweetpotatobase = create_sgn_session(
+    base_url="https://sweetpotatobase.org",
+    auto_login=True,
     username=os.getenv("SWEETPOTATOBASE_USERNAME"),
     password=os.getenv("SWEETPOTATOBASE_PASSWORD")
 )
+# Client Session
+sweetpotatobase = BrAPIClient_dev(base_url="https://sweetpotatobase.org/brapi/v2",
+                         session=sweetpotatobase)
+
+# Initialize client (prints go to stderr)
+# sweetpotatobase = BrAPIClient_dev(
+#     base_url="https://sweetpotatobase.org/brapi/v2",
+#     username=os.getenv("SWEETPOTATOBASE_USERNAME"),
+#     password=os.getenv("SWEETPOTATOBASE_PASSWORD")
+# )
 
 # Create MCP server
 server = FastMCP("sweetpotatobasequery")
 
 @server.tool()
-def all_functions() -> str:
+def all_functions() -> dict:
     """
     Use inherent funcitonality of the client to get a list of all possible endpoints
     """
     # Capture print output and return as string
-    captured = io.StringIO()
-    old_stdout = sys.stdout
-    sys.stdout = captured
-    try:
-        sweetpotatobase.general_get(help=True)
-        return captured.getvalue()
-    finally:
-        sys.stdout = old_stdout
+    # captured = io.StringIO()
+    # old_stdout = sys.stdout
+    # sys.stdout = captured
+    # try:
+    #     sweetpotatobase.show_services_to_llm()
+    #     return captured.getvalue()
+    # finally:
+    #     sys.stdout = old_stdout
+    return sweetpotatobase.show_services_to_llm()
 
 @server.tool()
-def specific_function(endpoint:str) -> str:
+def specific_function(service:str,
+                      DbID:bool = False,
+                      Search:bool = False) -> str:
     """
-    Get Data on a Specific Endpoint
+    Get Data on a Specific Service
+    Args: DbID: Bolean for DbID, Search: For the search service of the service
     """
     # Capture print output and return as string
     captured = io.StringIO()
     old_stdout = sys.stdout
     sys.stdout = captured
     try:
-        sweetpotatobase.general_get(help=endpoint)
+        if DbID:
+            if Search:
+                return f"Cannot be Both"
+            else:
+                sweetpotatobase.general_get(help=f"{service}")
+                return captured.getvalue()
+        if Search:
+            sweetpotatobase.general_get(help=f"search/{service}/{{searchResultsDbId}}")
+            captured.getvalue()
+        else:
+            sweetpotatobase.general_get(help=service)
         return captured.getvalue()
     finally:
         sys.stdout = old_stdout
@@ -84,7 +105,10 @@ def specific_function(endpoint:str) -> str:
 def general_get(service: str, 
                 filepath: str = "",
                 max_pages: int = 100,
-                pagesize: int = 100) -> str:
+                pagesize: int = 100,
+                DbID = False,
+                search=False,
+                params:dict = None) -> str:
     """
     Get and Save BrAPI data Endpoints as CSVs
     
@@ -106,6 +130,9 @@ def general_get(service: str,
     
     # Get the DataFrame
     df = sweetpotatobase.general_get(service=service,
+                                     DbID = DbID,
+                                     search=search,
+                                     params=params,
                                      max_pages=max_pages,
                                      pagesize=pagesize)
     
@@ -170,6 +197,80 @@ def tutorial() -> str:
     """
     return f"Use `all_functions` first in every chat to check which endpoints are avalible. \n - Use `specific_function` when you first try to call an endpoint always."
 
+@server.prompt()
+def get_endpoints() -> str: 
+    """
+    how to find the right endpoint
+    """
+    return """Given the user's prompt, translate it into a valid endpoint structure.
+
+Service Structure:
+- service: The base endpoint name (e.g., 'locations', 'germplasm', 'studies')
+
+Modifications:
+- DbID: Use {service}/{serviceDbID} to get a specific item by ID
+- search: Use search/{service}/{searchResultsDbId} with params dict to filter data
+
+Examples:
+- User: "Can you map all the locations for me?"
+  Agent workflow:
+    1. Call `all_functions` to see available endpoints
+    2. Call `specific_function` for 'locations' to understand the endpoint
+    3. Call `general_get` with service='locations' to retrieve data
+
+- User: "Get location with ID LOC123"
+  Endpoint: locations/LOC123
+
+- User: "Search for studies in 2023"
+  Endpoint: search/studies/{searchResultsDbId} with params={'year': 2023}
+"""
+
+@server.resource("instruction://find_right_endpoints")
+def get_right_endpoints() -> dict: 
+    """
+    Given the user's prompt, translate it into a valid endpoint structure.
+    
+    Service Structure:
+    - service: The base endpoint name (e.g., 'locations', 'germplasm', 'studies')
+    
+    Modifications:
+    - DbID: Use {service}/{serviceDbID} to get a specific item by ID
+    - search: Use search/{service}/{searchResultsDbId} with params dict to filter data
+    
+    Examples:
+    - User: "Can you map all the locations for me?"
+      Agent workflow:
+        1. Call `all_functions` to see available endpoints
+        2. Call `specific_function` for 'locations' to understand the endpoint
+        3. Call `general_get` with service='locations' to retrieve data
+    
+    - User: "Get location with ID LOC123"
+      Endpoint: locations/LOC123
+    
+    - User: "Search for studies in 2023"
+      Endpoint: search/studies/{searchResultsDbId} with params={'year': 2023}
+    """
+    return {
+        "service": "",  # Base service name (e.g., 'locations', 'germplasm')
+        "modifications": {
+            "dbId": {
+                "pattern": "{service}/{serviceDbID}",
+                "description": "Find a specific item by database ID",
+                "example": "locations/LOC123"
+            },
+            "search": {
+                "pattern": "search/{service}/{searchResultsDbId}",
+                "description": "Filter data using params dictionary",
+                "example": "search/studies/SEARCH456",
+                "params": {}  # Dictionary of search parameters
+            }
+        },
+        "workflow": [
+            "1. Call `all_functions` to check available endpoints",
+            "2. Call `specific_function` to understand the endpoint structure",
+            "3. Call `general_get` to retrieve the data"
+        ]
+    }
 
 # filepath = "C:\\Users\\yujer\\L_Documents\\Current Classes\\BreedbaseCsvs"
 # service = "locations"
