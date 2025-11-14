@@ -29,7 +29,7 @@ class BrAPIOAuth2Session(OAuth2Session):
     Base OAuth2 session for BrAPI authentication.
 
     This class extends authlib's OAuth2Session to provide:
-    - Automatic token storage and loading
+    - Automatic token storage and loading (optional)
     - Token expiry checking
     - Automatic Authorization header injection
     - Token refresh callbacks
@@ -37,8 +37,9 @@ class BrAPIOAuth2Session(OAuth2Session):
     Attributes:
         base_url (str): Base URL of the BrAPI server
         token_url (str): Full URL to the token endpoint
-        token_file (str): Path to file where token is persisted
+        token_file (str): Path to file where token is persisted (if enabled)
         token (OAuth2Token): Current authentication token
+        store_token (bool): Whether to persist tokens to disk
     """
 
     def __init__(
@@ -46,41 +47,46 @@ class BrAPIOAuth2Session(OAuth2Session):
         base_url: str,
         token_endpoint: str,
         token_file: str = '.brapi_token.json',
+        store_token: bool = False,
         **kwargs
     ):
         """
-        Initialize OAuth2 session with token management.
+        Initialize OAuth2 session with optional token management.
 
         Args:
             base_url: Base URL of the BrAPI server (e.g., "https://sweetpotatobase.org/brapi/v2")
             token_endpoint: Path to token endpoint (e.g., "/brapi/v2/token")
-            token_file: Path to JSON file for token persistence
+            token_file: Path to JSON file for token persistence (only used if store_token=True)
+            store_token: If True, tokens are persisted to disk. If False (default), tokens kept in memory only
             **kwargs: Additional arguments passed to OAuth2Session
         """
         self.base_url = base_url.rstrip('/')
         self.token_url = f"{self.base_url}{token_endpoint}"
+        self.store_token = store_token
         
-        # Create temp directory in current working directory
-        self.temp_dir = os.path.join(os.getcwd(), '.brapi_temp')
-        os.makedirs(self.temp_dir, exist_ok=True)
-        
-        # Store token file in temp directory
-        self.token_file = os.path.join(self.temp_dir, token_file)
+        # Only create temp directory if storing tokens to disk
+        if self.store_token:
+            self.temp_dir = os.path.join(os.getcwd(), '.brapi_temp')
+            os.makedirs(self.temp_dir, exist_ok=True)
+            self.token_file = os.path.join(self.temp_dir, token_file)
+        else:
+            self.temp_dir = None
+            self.token_file = None
 
-        # Load existing token if available
-        token = self._load_token()
+        # Load existing token only if storing is enabled
+        token = self._load_token() if self.store_token else None
 
-        # Initialize parent OAuth2Session with token management
+        # Initialize parent OAuth2Session with conditional token management
         super().__init__(
             token=token,
             token_endpoint=self.token_url,
-            update_token=self._save_token,  # Callback for auto-saving tokens
+            update_token=self._save_token if self.store_token else None,
             **kwargs
         )
 
     def _save_token(self, token: Dict, refresh_token=None, access_token=None):
         """
-        Save token to file (called automatically by authlib).
+        Save token to file (called automatically by authlib if store_token=True).
 
         This method is registered as a callback and will be invoked whenever
         the token changes (e.g., after login or refresh).
@@ -90,6 +96,10 @@ class BrAPIOAuth2Session(OAuth2Session):
             refresh_token: Optional refresh token (unused, for compatibility)
             access_token: Optional access token (unused, for compatibility)
         """
+        # Skip if storing tokens is disabled
+        if not self.store_token or not self.token_file:
+            return
+
         # Convert OAuth2Token to dict if needed
         if isinstance(token, OAuth2Token):
             token = dict(token)
@@ -100,11 +110,15 @@ class BrAPIOAuth2Session(OAuth2Session):
 
     def _load_token(self) -> Optional[Dict]:
         """
-        Load token from file if it exists.
+        Load token from file if it exists and storing is enabled.
 
         Returns:
-            Token dictionary if file exists, None otherwise
+            Token dictionary if file exists and store_token=True, None otherwise
         """
+        # Skip if storing tokens is disabled
+        if not self.store_token or not self.token_file:
+            return None
+
         try:
             token_data = json.loads(Path(self.token_file).read_text())
             print(f"[OK] Loaded existing token from {self.token_file}")
@@ -180,20 +194,22 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
         - And other SGN-based databases
     """
 
-    def __init__(self, base_url: str, token_file: str = '.brapi_token.json'):
+    def __init__(self, base_url: str, token_file: str = '.brapi_token.json', store_token: bool = False):
         """
         Initialize SGN BrAPI OAuth2 session.
 
         Args:
             base_url: Base URL (e.g., "https://sweetpotatobase.org")
-            token_file: Path to token storage file
+            token_file: Path to token storage file (only used if store_token=True)
+            store_token: If True, tokens are persisted to disk. If False (default), tokens kept in memory only
         """
         # SGN servers use /brapi/v2/token endpoint
         super().__init__(
             base_url=base_url,
             token_file=token_file,
             token_endpoint="/brapi/v2/token",
-            token_endpoint_auth_method=None
+            token_endpoint_auth_method=None,
+            store_token=store_token
         )
         self.login_time = None
 
@@ -202,7 +218,7 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
         Authenticate with username and password (OAuth2 password grant).
 
         This method implements SGN's custom array-based token request format.
-        The token is automatically saved to file and loaded for future requests.
+        The token is kept in memory. If store_token=True, it's also saved to disk.
 
         Args:
             username: BrAPI username (prompted if None)
@@ -267,29 +283,37 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
             'userDisplayName': user_display_name
         }
 
-        # Save token (triggers _save_token callback)
+        # Save token in memory
         self.token = OAuth2Token(token)
-        self._save_token(token)
+        
+        # Also save to disk if store_token=True
+        if self.store_token:
+            self._save_token(token)
+        
         self.login_time = time.time()
 
         print(f"[OK] Login successful! Authenticated as: {user_display_name}")
+        if not self.store_token:
+            print(f"[INFO] Token stored in memory only (expires in {expires_in} seconds)")
 
         return token
 
     def logout(self):
         """
-        Clear authentication token and delete token file.
+        Clear authentication token and optionally delete token file.
 
         Note: This is a local logout only. The server token remains valid
         until it expires naturally (no server-side revocation endpoint).
         """
         self.token = None
 
-        try:
-            Path(self.token_file).unlink()
-            print(f"[OK] Token deleted from {self.token_file}")
-        except FileNotFoundError:
-            pass
+        # Only delete file if storing tokens to disk
+        if self.store_token:
+            try:
+                Path(self.token_file).unlink()
+                print(f"[OK] Token deleted from {self.token_file}")
+            except FileNotFoundError:
+                pass
 
         print("[OK] Logged out successfully")
 
@@ -297,7 +321,7 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
         """
         Check before requests if token has expired. 
         """
-        if time.time() > self.login_time + self.token.get('expires_in', 0):
+        if self.login_time and time.time() > self.login_time + self.token.get('expires_in', 0):
             print("[WARNING] Token has expired, logging in again.")
             self.logout()
             self.login()
@@ -310,26 +334,34 @@ def create_sgn_session(
     token_file: str = '.brapi_token.json',
     auto_login: bool = False,
     username: Optional[str] = None,
-    password: Optional[str] = None
+    password: Optional[str] = None,
+    store_token: bool = False
 ) -> SGNBrAPIOAuth2:
     """
     Create an authenticated SGN BrAPI OAuth2 session.
 
     Args:
         base_url: Base URL of SGN server
-        token_file: Path to token storage
+        token_file: Path to token storage (only used if store_token=True)
         auto_login: If True, prompt for login if no valid token exists
+        username: BrAPI username (optional, prompted if needed)
+        password: BrAPI password (optional, prompted if needed)
+        store_token: If True, tokens persisted to disk. If False (default), in-memory only
 
     Returns:
         Configured SGNBrAPIOAuth2 session
 
     Example:
+        >>> # In-memory tokens (default, recommended for security)
         >>> session = create_sgn_session()
         >>> if not session.is_authenticated():
         ...     session.login()
         >>> response = session.get(f"{session.base_url}/brapi/v2/serverinfo")
+        
+        >>> # With disk persistence (for long-running processes)
+        >>> session = create_sgn_session(store_token=True)
     """
-    session = SGNBrAPIOAuth2(base_url, token_file)
+    session = SGNBrAPIOAuth2(base_url, token_file, store_token=store_token)
 
     if auto_login and not session.is_authenticated():
         print("No valid token found. Please login:")
@@ -344,10 +376,11 @@ if __name__ == "__main__":
     print("BrAPI OAuth2 Authentication Module")
     print("=" * 50)
 
-    # Create session (don't auto-login to avoid interactive prompts)
+    # Create session with in-memory tokens (default)
     client = create_sgn_session(
         base_url="https://sweetpotatobase.org",
-        auto_login=False
+        auto_login=False,
+        store_token=False  # Explicitly in-memory only
     )
 
     # Check if already authenticated
