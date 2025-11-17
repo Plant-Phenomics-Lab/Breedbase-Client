@@ -1,12 +1,13 @@
 # Imports
 from auths import create_sgn_session
 import pydantic
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Literal
 import requests
 from brapi_v2.manual import ServerInfo
 import pandas as pd
 import json
 import os
+from datetime import datetime
 from urllib.parse import urlparse
 
 class BrAPIClient_dev:
@@ -157,7 +158,14 @@ class BrAPIClient_dev:
             page += 1
 
         data = all_data
-        return data
+
+        # Get Metadta
+        totalCount = pagination.get('totalCount', 0)
+        saved_metadata = {
+            "totalCount":totalCount,
+            "time":datetime.now().strftime("%Y%m%d%H%M%S")
+        }
+        return data, saved_metadata
 
     def _get_valid_endpoints(self,clean=True):
         """Get valid endpoints based on server info and save to temp CSV file"""
@@ -229,6 +237,19 @@ class BrAPIClient_dev:
             help_text += f"  {param_desc}\n"
 
         print(help_text)
+    
+    def format_parameters_for_llm(self, service: str) -> None:
+        """Format parameter information for help display"""
+        endpoints_df = self._load_endpoints_df()
+        endpoint_row = endpoints_df[endpoints_df['service'] == service]
+
+        if endpoint_row.empty:
+            print(f"Service '{service}' not found")
+            return
+
+        description = endpoint_row.iloc[0]['description']
+        schema = json.loads(endpoint_row.iloc[0]['dictionary_loc'])
+        return schema
 
     def show_all_services_help(self) -> None:
         """Show all available services with descriptions in a formatted table"""
@@ -406,8 +427,6 @@ class BrAPIClient_dev:
             )
 
     def general_get(self,
-                    # Help
-                    help: Optional[bool | str] = None,
                     # Endpoint Construction
                     service: str = None,
                     DbID: Optional[str] = None,
@@ -436,13 +455,6 @@ class BrAPIClient_dev:
         Returns:
             Help text if help=True, otherwise the API response (as DataFrame or dict)
         """
-        # Handle help requests
-        if help:
-            if help is True:
-                self.show_all_services_help()
-            else:
-                self.format_parameters_help(help)
-            return None
 
         # Validate service exists
         if service not in self.servicelist:
@@ -453,7 +465,7 @@ class BrAPIClient_dev:
 
         # Build endpoint URL
         if search: 
-            response = self._search_request(f"search/{service}",
+            response, metadata = self._search_request(f"search/{service}",
                                             params=params,
                                             max_pages=max_pages,
                                             pagesize=pagesize,
@@ -479,16 +491,16 @@ class BrAPIClient_dev:
             else:
                 endpoint = f"/{service}"
             # Make request
-            response = self._fetch_all_pages(endpoint, params=params, 
+            response, metadata = self._fetch_all_pages(endpoint, params=params, 
                                                 max_pages=max_pages,
                                                 pagesize=pagesize)
 
         # Convert to DataFrame if requested
         if dataframe:
-            return pd.json_normalize(response)
+            return pd.json_normalize(response), metadata
 
-        return response
-    
+        return response, metadata
+
     # def _update_endpoint(service: str = None):
 
 
