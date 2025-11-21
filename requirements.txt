@@ -1,7 +1,0 @@
-pandas
-requests
-pydantic>=2.0
-authlib
-python-dotenv
-groq
-distro
