@@ -1,7 +1,7 @@
 import pandas as pd
 
-from .type import ServerCapabilities, ModuleCapability, EndpointCapability
-from ..client import BrapiClient
+from client.capabilities.type import ServerCapabilities, ModuleCapability, EndpointCapability
+from client.client import BrapiClient
 from pathlib import Path
 
 class CapabilityBuilder:

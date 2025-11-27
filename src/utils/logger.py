@@ -2,12 +2,13 @@ import logging
 from pathlib import Path
 from functools import wraps
 from mcp.server.fastmcp import Context
+from config.value import config
 
 LOG_CONFIG = {
-  'dir': 'logs/',
-  'file_name': 'sweetpotatobase_mcp.log',
+  'dir': config.log_dir,
+  'file_name': f"{config.name}.log",
   'default_log_level': 'debug',
-  'format': '%(asctime)s [%(levelname)s] %(message)s',
+  'format': '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s',
 }
 
 def string_to_log_level(level: str):

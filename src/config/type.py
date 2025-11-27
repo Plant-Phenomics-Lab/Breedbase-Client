@@ -8,28 +8,25 @@ import os
 class BrapiServerConfig:
   name: str
   base_url: str
-  headers: Dict[str, str]
-  data_root: Path
   capabilities_override: Optional[Path] = None
 
   @property
-  def csv_dir(self) -> Path:
-    d = self.data_root / self.name / "csv"
-    d.mkdir(parents=True, exist_ok=True)
+  def workspace_dir(self) -> Path:
+    d = Path(__file__).parent.parent.parent
     return d
-
-  @property
-  def tmp_dir(self) -> Path:
-    d = self.data_root / self.name / "tmp"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
+  
   @property
   def log_dir(self) -> Path:
-    d = self.data_root / self.name / "logs"
+    d = self.workspace_dir / self.name / "logs" 
     d.mkdir(parents=True, exist_ok=True)
     return d
 
+  @property
+  def downloads_dir(self) -> Path:
+    d = self.workspace_dir / self.name / "downloads"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+  
   # TODO :: Using same keys for username and password for backward
   # compatibility, implement better username & password loading
   @property
