@@ -1,5 +1,16 @@
 # Breedbase Client
 
+## Running
+1. cd {Breedbase-Client}
+2. uv sync
+3. in .env add,
+```
+        SWEETPOTATOBASE_USERNAME=
+        SWEETPOTATOBASE_PASSWORD=
+```
+4. .venv\Scripts\activate
+5. python src/main.py
+
 ## Introduction
 
 This is a GitHub repository for Breedbase client tools. Currently supports **SweetPotatoBase**, with the goal of supporting all BrAPI-compliant databases.
