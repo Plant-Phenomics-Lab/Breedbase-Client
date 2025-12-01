@@ -38,3 +38,9 @@ class BrapiServerConfig:
   def password(self) -> str:
     load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env")
     return os.getenv("SWEETPOTATOBASE_PASSWORD")
+  
+  @property
+  def port(self)-> Optional[int]:
+    load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env")
+    port = os.getenv("PORT")
+    return int(port) if port is not None else 8000
