@@ -1,7 +1,7 @@
-from mcp_server.mcp_server import BrapiMcpServer
+from mcp_server.http_server import BrapiMcpHttpServer
 from config.value import config
+import uvicorn
 
-server = BrapiMcpServer(config).create_server()
-
-if __name__ == "__main__":
-    server.run(transport="streamable-http", port=config.port)
+if __name__ == '__main__':
+  http_server = BrapiMcpHttpServer.create_server(config)
+  uvicorn.run(http_server.app, host='0.0.0.0', port=config.port, reload=False)

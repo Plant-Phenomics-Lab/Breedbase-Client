@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from dotenv import load_dotenv
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 import os
 
 @dataclass
@@ -27,6 +27,12 @@ class BrapiServerConfig:
     d.mkdir(parents=True, exist_ok=True)
     return d
   
+  @property
+  def sessions_dir(self) -> Path:
+    d = self.workspace_dir / self.name / "sessions"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
   # TODO :: Using same keys for username and password for backward
   # compatibility, implement better username & password loading
   @property

@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from functools import wraps
-from mcp.server.fastmcp import Context
+from fastmcp import Context
 from config.value import config
 
 LOG_CONFIG = {

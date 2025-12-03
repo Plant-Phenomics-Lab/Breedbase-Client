@@ -1,7 +1,9 @@
 """Generic BrAPI tools using general_get utility"""
 
-from typing import Optional, Dict
-from mcp.server.fastmcp import FastMCP
+from typing import Optional, Dict, Callable
+import hashlib
+import json
+from fastmcp import FastMCP, Context
 from client.client import BrapiClient
 from client.capabilities.capability_builder import ServerCapabilities
 from client.capabilities.helpers import (
@@ -14,12 +16,13 @@ from client.helpers import fetch_paginated, search_paginated
 
 def register_discovery_tools(server, capabilities):
   @server.tool()
-  def describe_server_capabilities():
+  def describe_server_capabilities(context: Context):
     """
     Return a structured JSON of server capabilities
     """
     return {
       'server': capabilities.server_name,
+      'session_id': context.session_id,
       'modules': {
         name: {
           'endpoints': list(m.endpoints.keys()),
@@ -30,7 +33,7 @@ def register_discovery_tools(server, capabilities):
 
 
 def register_generic_tools(
-  server: FastMCP, client: BrapiClient, capabilities: ServerCapabilities
+  server: FastMCP, client: BrapiClient, capabilities: ServerCapabilities, get_session_cache: Callable
 ):
   """
   Register generic tools based on server capabilities.
@@ -45,6 +48,8 @@ def register_generic_tools(
     sub: Optional[str] = None,
     params: Optional[Dict] = None,
     max_results: int = 100,
+    session_id: Optional[str] = None, 
+    context: Context = None,
   ) -> dict:
     """
     **GENERIC FALLBACK** - Use specific tools first if available!
@@ -57,6 +62,7 @@ def register_generic_tools(
         sub: Sub-resource (e.g., 'calls', 'variants', 'callsets')
         params: Query parameters for filtering
         max_results: Maximum results to return (max 500)
+        session_id: Send session ID
 
     Examples:
         brapi_get('studies')
@@ -64,8 +70,10 @@ def register_generic_tools(
         brapi_get('variantsets', db_id='vs1', sub='calls')
 
     Returns:
-        Data and metadata
+        Metadata about the query and result_id for accessing data
     """
+    # TODO :: Return complete data in any case?
+    return_data = False
     # Check capabilities
     if not check_endpoint_exists(capabilities, service):
       return {
@@ -106,24 +114,72 @@ def register_generic_tools(
       df = df.head(max_results)
       df = df.dropna(axis=1, how='all')
 
-      return {
-        'data': df.to_dict(orient='records'),
-        'metadata': {
-          'endpoint': endpoint,
-          'service': service,
-          'db_id': db_id,
-          'sub_resource': sub,
-          'total_count': metadata.get('totalCount', len(df)),
-          'returned_count': len(df),
-          'columns': list(df.columns),
-          'truncated': metadata.get('totalCount', 0) > max_results,
-        },
+      result_cache, active_session_id = get_session_cache(context, session_id)
+
+      query_hash = hashlib.md5(
+          json.dumps({
+              "service": service,
+              "db_id": db_id,
+              "sub": sub,
+              "params": params
+          }, sort_keys=True).encode()
+      ).hexdigest()[:8]
+      result_id = f"{service}_{query_hash}"
+
+      result_cache.save_result(
+          result_id=result_id,
+          session_id=active_session_id,
+          data=df,
+          metadata={
+              "query": {
+                  "service": service,
+                  "db_id": db_id,
+                  "sub": sub,
+                  "params": params
+              },
+              "endpoint": endpoint
+          },
+          format='csv'
+      )
+
+      response = {
+          "result_id": result_id,
+          "session_id": active_session_id,
+          "query": {
+              "service": service,
+              "endpoint": endpoint,
+              "db_id": db_id,
+              "params": params
+          },
+          "summary": {
+              "total_count": metadata.get('totalCount', len(df)),
+              "returned_count": len(df),
+              "columns": list(df.columns),
+              "column_count": len(df.columns),
+              "truncated": metadata.get('totalCount', 0) > max_results
+          },
+          "access": {
+              "resource": f"brapi://results/{active_session_id}/{result_id}",
+              "tools": {
+                  "get_summary": f"get_result_summary('{active_session_id}','{result_id}')",
+                  "load_result": f"load_result('{active_session_id}','{result_id}', limit=100)",
+              }
+          },
+          "hint": f"Data saved to server. Use resource brapi://results/{active_session_id}/{result_id} or load_result('{active_session_id}','{result_id}') to access."
       }
+      
+      # Optionally include data (for small results)
+      if return_data:
+          response["data"] = df.to_dict(orient='records')
+          response["warning"] = "Data included in response - use return_data=False for large datasets"
+      
+      return response
     except Exception as e:
       return {'error': str(e), 'service': service, 'endpoint': endpoint}
 
   @server.tool()
-  def brapi_search(service: str, search_params: Dict, max_results: int = 100) -> dict:
+  def brapi_search(service: str, search_params: Dict, max_results: int = 100, session_id: Optional[str] = None, context: Context = None) -> dict:
+
     """
     **GENERIC FALLBACK** - Use specific search tools first if available!
 
@@ -133,15 +189,19 @@ def register_generic_tools(
         service: Service name to search (e.g., 'studies', 'germplasm')
         search_params: Search parameters as dictionary
         max_results: Maximum results to return (max 500)
+        session_id: Send session ID
 
     Examples:
         brapi_search('locations', {'countryNames': ['Mozambique']})
         brapi_search('studies', {'studyTypes': ['Advanced Yield Trial'],'locationDbIds': ['80']})
 
     Returns:
-        Search results and metadata
+        Metadata about the search and result_id for accessing data
     """
     # Check if search is supported
+    # TODO :: Return complete data in any case?
+    return_data = False
+
     search_service = f'search/{service}'
     if not check_endpoint_exists(capabilities, search_service):
       return {
@@ -150,6 +210,7 @@ def register_generic_tools(
         'available_search_services': list_search_services(capabilities),
       }
 
+    result_cache, active_session_id = get_session_cache(context, session_id)
     # Execute search
     try:
       max_results = min(max_results, 500)
@@ -168,117 +229,57 @@ def register_generic_tools(
       df = df.head(max_results)
       df = df.dropna(axis=1, how='all')
 
-      return {
-        'data': df.to_dict(orient='records'),
-        'metadata': {
-          'service': service,
-          'search_params': search_params,
-          'total_count': metadata.get('totalCount', len(df)),
-          'returned_count': len(df),
-          'columns': list(df.columns),
-          'truncated': metadata.get('totalCount', 0) > max_results,
-        },
-      }
-    except Exception as e:
-      return {'error': str(e), 'service': service}
+      query_hash = hashlib.md5(
+                json.dumps({
+                    "service": service,
+                    "search_params": search_params
+                }, sort_keys=True).encode()
+            ).hexdigest()[:8]
+      
+      result_id = f"search_{service}_{query_hash}"
 
-  # TODO :: Experimental Tool
-  @server.tool()
-  def brapi_aggregate(
-    service: str,
-    aggregation: str,
-    group_by: Optional[str] = None,
-    params: Optional[Dict] = None,
-  ) -> dict:
-    """
-    Server-side aggregation for large datasets.
-    Avoids loading huge datasets into LLM context.
-
-    Args:
-        service: Service name (e.g., 'studies', 'observations')
-        aggregation: Type - 'count', 'unique', 'distribution', 'stats'
-        group_by: Column to group by (for 'unique' and 'distribution')
-        params: Filter parameters (uses GET endpoint)
-
-    Examples:
-        brapi_aggregate('studies', 'count')
-        brapi_aggregate('observations', 'distribution', group_by='observationVariableDbId')
-
-    Returns:
-        Compact aggregation results
-    """
-    # Check capabilities
-    if not check_endpoint_exists(capabilities, service):
-      return {
-        'error': f"Service '{service}' not supported",
-        'available_services': list_all_services(capabilities),
-      }
-
-    try:
-      # Fetch ALL data server-side
-      df, metadata = fetch_paginated(
-        client=client,
-        endpoint=service,
-        params=params,
-        max_pages=None,  # Fetch all for aggregation
-        pagesize=100,
-        as_dataframe=True,
+      result_cache.save_result(
+          session_id= active_session_id,
+          result_id=result_id,
+          data=df,
+          metadata={
+              "query": {
+                  "service": service,
+                  "search_params": search_params,
+                  "search": True
+              }
+          },
+          format='csv'
       )
 
-      result = {
-        'service': service,
-        'aggregation': aggregation,
-        'total_records': len(df),
-      }
-
-      if aggregation == 'count':
-        result['counts'] = {
-          'total': len(df),
-          'unique_per_column': {
-            col: int(df[col].nunique()) for col in df.columns if len(df) > 0
+      response = {
+          "result_id": result_id,
+          'session_id': active_session_id,
+          "query": {
+              "service": service,
+              "search_params": search_params
           },
-        }
-
-      elif aggregation == 'unique':
-        if not group_by:
-          return {'error': "group_by required for 'unique' aggregation"}
-        if group_by not in df.columns:
-          return {
-            'error': f"Column '{group_by}' not found",
-            'available_columns': list(df.columns),
-          }
-
-        unique_vals = df[group_by].unique().tolist()[:100]
-        result['column'] = group_by
-        result['unique_values'] = unique_vals
-        result['total_unique'] = int(df[group_by].nunique())
-        result['truncated_to_100'] = df[group_by].nunique() > 100
-
-      elif aggregation == 'distribution':
-        if not group_by:
-          return {'error': "group_by required for 'distribution' aggregation"}
-        if group_by not in df.columns:
-          return {
-            'error': f"Column '{group_by}' not found",
-            'available_columns': list(df.columns),
-          }
-
-        dist = df[group_by].value_counts().head(50)
-        result['column'] = group_by
-        result['distribution'] = {str(k): int(v) for k, v in dist.to_dict().items()}
-        result['showing_top_50'] = len(dist) >= 50
-
-      elif aggregation == 'stats':
-        stats = df.describe(include='all').to_dict()
-        result['statistics'] = stats
-
-      else:
-        return {
-          'error': f'Unknown aggregation: {aggregation}',
-          'valid_types': ['count', 'unique', 'distribution', 'stats'],
-        }
-
-      return result
-
+          "summary": {
+              "total_matches": metadata.get('totalCount', len(df)),
+              "returned_count": len(df),
+              "columns": list(df.columns),
+              "column_count": len(df.columns),
+              "truncated": metadata.get('totalCount', 0) > max_results
+          },
+          "access": {
+              "resource": f"brapi://results/{active_session_id}/{result_id}",
+              "tools": {
+                  "get_summary": f"get_result_summary('{active_session_id}','{result_id}')",
+                  "load_sample": f"load_result('{active_session_id}','{result_id}', limit=100)",
+                  "load_columns": f"load_result('{active_session_id}','{result_id}', columns=['col1', 'col2'])"
+              }
+          },
+          "hint": f"Data saved to server. Access via resource or load_result('{result_id}')"
+      }
+      if return_data:
+        response["data"] = df.to_dict(orient='records')
+        response["warning"] = "Data included - use return_data=False for large datasets"
+      
+      return response
     except Exception as e:
       return {'error': str(e), 'service': service}

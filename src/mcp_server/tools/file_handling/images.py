@@ -1,10 +1,10 @@
 from typing import Optional, Dict
 from datetime import datetime
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from client.client import BrapiClient
 from client.capabilities.capability_builder import ServerCapabilities
-from client.helpers import fetch_paginated, search_paginated, download_images_batch
+from client.helpers import fetch_paginated, download_images_batch
 from client.capabilities.helpers import check_images_supported
 from config.type import BrapiServerConfig
 
