@@ -1,52 +1,46 @@
 from dataclasses import dataclass
-from dotenv import load_dotenv
 from pathlib import Path
 from typing import Optional
-import os
 
 @dataclass
 class BrapiServerConfig:
+  mode: str 
+  port: int 
   name: str
   base_url: str
+  authtype: Optional[str] = None
+  username: Optional[str] = None
+  password: Optional[str] = None
+  session_dir_override: Optional[str] = None
   capabilities_override: Optional[Path] = None
+  workspace_dir: Path = Path(__file__).parent.parent.parent
 
-  @property
-  def workspace_dir(self) -> Path:
-    d = Path(__file__).parent.parent.parent
-    return d
+  # @property
+  # def workspace_dir(self) -> Path:
+  #     return Path(__file__).parent.parent.parent
   
   @property
   def log_dir(self) -> Path:
-    d = self.workspace_dir / self.name / "logs" 
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+      d = self.workspace_dir / "cache" / self.name / "logs"
+      d.mkdir(parents=True, exist_ok=True)
+      return d
 
-  @property
-  def downloads_dir(self) -> Path:
-    d = self.workspace_dir / self.name / "downloads"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-  
   @property
   def sessions_dir(self) -> Path:
-    d = self.workspace_dir / self.name / "sessions"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-  # TODO :: Using same keys for username and password for backward
-  # compatibility, implement better username & password loading
-  @property
-  def username(self) -> str:
-    load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env")
-    return os.getenv("SWEETPOTATOBASE_USERNAME")
-
-  @property
-  def password(self) -> str:
-    load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env")
-    return os.getenv("SWEETPOTATOBASE_PASSWORD")
+      # Only use override if in STDIO mode
+      if self.session_dir_override and self.mode.upper() == 'STDIO':
+          d = Path(self.session_dir_override) / "data"
+      else:
+          d = self.workspace_dir / "cache" / self.name / "sessions"
+      d.mkdir(parents=True, exist_ok=True)
+      return d
   
   @property
-  def port(self)-> Optional[int]:
-    load_dotenv(dotenv_path=Path(__file__).parent.parent.parent / ".env")
-    port = os.getenv("PORT")
-    return int(port) if port is not None else 8000
+  def downloads_dir(self) -> Path:
+      # Only use override if in STDIO mode
+      if self.session_dir_override and self.mode.upper() == 'STDIO':
+          d = Path(self.session_dir_override) / "images"
+      else:
+        d = self.workspace_dir / "cache" / self.name / "downloads"
+      d.mkdir(parents=True, exist_ok=True)
+      return d

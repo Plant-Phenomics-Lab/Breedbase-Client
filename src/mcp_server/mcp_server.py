@@ -39,6 +39,6 @@ class BrapiMcpServer:
     register_discovery_tools(server, capabilities)
     register_generic_tools(server, client, capabilities, self.get_session_cache)
     register_image_tools(server, client, capabilities, self.config)
-    register_result_cache_tools(server, self.get_session_cache)
+    register_result_cache_tools(server, self.get_session_cache, self.config)
 
     return server

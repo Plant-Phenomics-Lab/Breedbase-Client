@@ -1,117 +1,124 @@
-# Breedbase Client
+# BrAPI MCP Server
 
-## Running
-1. cd {Breedbase-Client}
-2. uv sync
-3. in .env add,
+<div align="center">
+
+**The BrAPI MCP Server provides LLMs with tools to search and retrieve data from BrAPI v2 Compatible Servers.**
+
+</div>
+
+# Tools Overview
+
+# Examples
+
+# Getting Started
+
+- The server supports two modes: **STDIO** and **HTTP**.
+  - **STDIO:** Best for personal use. The server runs directly on your machine, and files are saved to your local disk. It is easier to configure and more secure for single users.
+  - **HTTP:** Under active development. Best for hosting the server for multiple users or on a cloud instance. It exposes a web endpoint that MCP clients can connect to over the network. 
+
+### Configuration
+
+1. Clone the Repository
+
+``` shell
+git clone https://github.com/Plant-Phenomics-Lab/Breedbase-Client
 ```
-        SWEETPOTATOBASE_USERNAME=
-        SWEETPOTATOBASE_PASSWORD=
+
+2. Configure the enviroment variables. You can set these in a `.env` file, pass them via your MCP client config, or use Docker environment variables. You must configure `BASE_URL` for your server to work. 
+
+**Key Variables**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BASE_URL` | `https://sweetpotatobase.org/brapi/v2` | The BrAPI server URL. You must set a base url. Set it at root of the BRAPI server endpoints (ends in /brapi/v2)  |
+| `BRAPI_USERNAME` | `None` | Your login username. |
+| `BRAPI_PASSWORD` | `None` | Your login password. |
+| `MODE` | `stdio` | `stdio` for local apps, `http` for remote. |
+
+👉 **[See CONFIGURATION.md](Examples/CONFIGURATION.md) for full details and examples.**
+
+**Example with Editing .env.**
+
+``` shell
+# Copy the .env example file
+cd Breedbase-Client
+cp .env.example .env
+# Then edit the file with your favorite text editor. 
 ```
-4. .venv\Scripts\activate
-5. python src/main.py
 
-## Introduction
+3. Configure the server. 
 
-This is a GitHub repository for Breedbase client tools. Currently supports **SweetPotatoBase**, with the goal of supporting all BrAPI-compliant databases.
+For STDIO, can can just add this command to your MCP Client Configuration file (ex `claude.json`).
+
+```json
+{
+  "mcpServers": {
+    "brapiserver": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/Breedbase-Client",
+        "src/main.py"
+      ]
+    }
+  }
+}
+```
+
+For HTTP You need to run the server and then connect your server to the MCP client. Thus: 
+
+```bash
+# Run the Sever, assume you're in the Breedbase-Client folder. 
+docker compose up -d
+```
+
+Then connect the server. Remember to use the port you configured. 
+
+```json
+{
+  "mcpServers": {
+    "brapiserver": {
+			"url": "http://127.0.0.1:8000/mcp",
+			"type": "http"
+		}
+  }
+}
+```
+### Dependencies
+
+- [UV](https://github.com/astral-sh/uv) version 0.4.0 or higher for running locally with STDIO. 
+- [Docker](https://www.docker.com/) for running HTTP. 
+
 
 **Features:**
 - **Python Client**: A robust Python client for calling Breedbase that handles pagination automatically
 - **FastMCP Implementation**: Simple FastMCP implementation with tool uses that can call Breedbase and save data locally as CSV or JSON
 
-## Setup
+## Compatability
 
-### Development Setup with UV
+- A List of Server the MCP was tested against. 
 
-This project uses [UV](https://github.com/astral-sh/uv) for simple setup and dependency management:
-
-```bash
-# Install dependencies
-uv sync
-
-# Test the Server
-!uv run mcp dev sweetpotatoquery.py
-
-# Attempt to Integrate to Claude Desktop (or to get config file)
-uv run mcp install sweetpotatoquery.py --name "Sweetpotatobasequery"
-```
-
-Note, this may not work automatically. Here are the configs that I used to get the client to work:
-
-- for vscode; Ctrl + shirt + P and find the MCP:Open User Configuration Setting
-
-```json
-#Claude Code and VsCode
-"sweetpotatobasequery": {
-      "command": "Path\\To\\uv\\uv.exe",
-      "args": [
-        "run",
-        "--directory",
-        "Loca\\Path\\Breedbase-Client",
-        "--with",
-        "mcp[cli]",
-        "mcp",
-        "run",
-        "sweetpotatoquery.py"
-      ]
-    }
-```
-
-### Production Setup
-
-Docker implementation is planned for production deployments (see To-Do list below).
-
-## Project Structure
-
-### Important Files
-
-- [client.py](client.py) - Main client implementation
-- [client dev.py](client%20dev.py) - Development version of the client
-- [auths.py](auths.py) - Authentication handling for Breedbase endpoints
-- [Helper.py](Helper.py) - Helper utilities
-- [sweetpotatoquery.py](sweetpotatoquery.py) - SweetPotatoBase-specific queries
-- [pyproject.toml](pyproject.toml) - Project dependencies and configuration
-- [requirements.txt](requirements.txt) - Python package requirements
-- [brapi_endpoints.csv](brapi_endpoints.csv) - BrAPI endpoint definitions
-
-### Important Folders
-
-- [brapi_v2/](brapi_v2/) - BrAPI v2 implementation
-  - [model.py](brapi_v2/model.py) - Data models
-  - [manual.py](brapi_v2/manual.py) - Manual endpoint implementations
-  - [brapi_generated.json](brapi_v2/brapi_generated.json) - Generated BrAPI schema
-- [Data/](Data/) - Local data storage directory
-- [.brapi_temp/](.brapi_temp/) - Temporary BrAPI cache
-
-### Configuration Files
-
-- [README_AUTH.md](README_AUTH.md) - Authentication documentation
-- [.gitignore](.gitignore) - Git ignore rules
-
-## To-Do List
-
-### Completed ✅
-
-- [x] Build basic Python clients
-- [x] Authentication for SOL Genomics endpoints
-- [x] Basic GET endpoints
-- [x] GET endpoints with DBID
-- [x] Get information for agent about specific endpoints
-- [x] Get information for all endpoints
-
-### In Progress / Not Done ⏳
-
-- [ ] Debate General vs. Specific Tools Calls
-- [ ] Implement tracking/logging with ctx
-- [ ] GET endpoints for filtering/searching
-- [ ] Database-specific resources
-- [ ] Allow user input for client auth
-- [ ] Authentication for other selected endpoints
-- [ ] Write validation script
-- [ ] Docker implementation
-- [ ] MCP registry
-- [ ] Write and publish arXiv whitepaper
-
+|Server|Auth Type|Works?| Base Get|Search|Images|
+|---|---|---|---|---|---|
+|Cassavabase|SGN|✅|✅|✅|✅|
+|Solgenomics|SGN|✅|✅|✅|✅|
+|Sweetpotatobase|SGN|✅|✅|✅|✅|
+|Yambase|SGN|✅|✅|✅|✅|
+|Musabase|SGN|✅|✅|✅|No Images|
+|CitrusBase|SGN|Not Tested|Not Tested|Not Tested|Not Tested|
+|sugarcane.sgn.cornell.edu|SGN|Not Tested|Not Tested|Not Tested|Not Tested|
+|BrAPI Test Server|None|✅|✅|✅|✅|
+|T3 (Wheat Oat, Barley)|None|✅|✅|✅|✅|
+|Gigwa|None|✅|✅|✅|No Images|
+|MGIS|None|✅|✅|No Images|✅|
+|Musa Acuminata GWAS Panel1 - GBS - genome V1|None|✅|✅|✅|No Images|
+|Musa Acuminata GWAS Panel - GBS - genome V2|None|✅|✅|✅|No Images|
+|Musa Germplasm Information System v5|None|✅|✅|✅|No Images|
+|Crop Ontology|None|❌|❌|❌|❌|
+|EU-SOL Tomato collection|None|❌|❌|❌|❌|
+|TERRA-REF BrAPI implementation|None|❌|❌|❌|❌|
+|URGI GnpIS Information System|None|❌|❌|❌|❌|
 
 ## Contributing
 
@@ -120,3 +127,4 @@ This project is under active development. Contributions and feedback are welcome
 ## License
 
 [Add your license information here]
+

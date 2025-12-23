@@ -1,11 +1,12 @@
 from typing import Optional, Callable
 from pathlib import Path
 from fastmcp import FastMCP, Context
-from src.mcp_server.session.result_cache import ResultCache
+# from src.mcp_server.session.result_cache import ResultCache
+from config.type import BrapiServerConfig
 import json
 
 
-def register_result_cache_tools(server: FastMCP, get_session_cache: Callable):
+def register_result_cache_tools(server: FastMCP, get_session_cache: Callable, config: BrapiServerConfig):
   """Tools for working with saved results"""
 
   @server.resource('brapi://results/{session_id}')
@@ -170,7 +171,9 @@ def register_result_cache_tools(server: FastMCP, get_session_cache: Callable):
     if not info:
       return {'error': f"Result '{result_id}' not found"}
 
-    base_url = 'http://localhost:8000'  # Get from config
+    # Use configured port
+    port = config.port if config else 8000
+    base_url = f'http://localhost:{port}'
     download_url = f'{base_url}/download/{active_session_id}/{result_id}'
 
     return {
@@ -211,7 +214,8 @@ def register_result_cache_tools(server: FastMCP, get_session_cache: Callable):
     if not info:
       return {'error': f"Result '{result_id}' not found"}
 
-    base_url = 'http://localhost:8000'
+    port = config.port if config else 8000
+    base_url = f'http://localhost:{port}'
     download_url = f'{base_url}/download/{active_session_id}/{result_id}'
 
     return {

@@ -1,0 +1,12 @@
+services:
+  brapi-mcp:
+    build: .
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    env_file:
+      - .env
+    environment:
+      - MODE=http
+    volumes:
+      - ./logs:/app/logs
+      - ./sessions:/app/sessions

@@ -22,6 +22,10 @@ class BrapiMcpHttpServer:
   def _setup_routes(self):
     """Setup HTTP routes for file downloads"""
 
+    @self.app.get('/health')
+    async def health():
+      return {'status': 'ok'}
+
     @self.app.get('/download/{session_id}/{result_id}')
     async def download_result(session_id: str, result_id: str):
       """

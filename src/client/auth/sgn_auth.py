@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Optional, Dict, Callable
 import os
 
+import sys
+
 from .base_oauth import BrAPIOAuth2Session
 class SGNBrAPIOAuth2(BrAPIOAuth2Session):
   """
@@ -103,13 +105,19 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
     # Validate credentials were provided
     if not username or not password:
       raise ValueError('Username and password must be provided')
-
+    
     # Construct SGN's non-standard format
     # Note: This is NOT standard OAuth2, but required by SGN servers
     payload = {'grant_type': 'password', 'password': password, 'username': username}
   
     # Make authentication request
     response = requests.post(self.token_url, data=payload)
+    
+    # DEBUG
+    print(payload, file=sys.stderr)
+    print(response.url, file=sys.stderr)
+    print(username, file=sys.stderr)
+    print(password, file=sys.stderr)
 
     # Raise exception if authentication failed
     response.raise_for_status()

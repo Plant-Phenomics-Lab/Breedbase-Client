@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from functools import wraps
 from fastmcp import Context
@@ -9,6 +10,7 @@ LOG_CONFIG = {
   'file_name': f"{config.name}.log",
   'default_log_level': 'debug',
   'format': '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s',
+  'backup_count': 30,  # Keep 30 days of logs
 }
 
 def string_to_log_level(level: str):
@@ -23,10 +25,19 @@ default_log_level = string_to_log_level(LOG_CONFIG['default_log_level'])
 
 log_format = LOG_CONFIG['format']
 
+# Configure root logger with rotation
+handler = TimedRotatingFileHandler(
+    log_file,
+    when="midnight",
+    interval=1,
+    backupCount=LOG_CONFIG['backup_count'],
+    encoding='utf-8'
+)
+handler.setFormatter(logging.Formatter(log_format))
+
 logging.basicConfig(
-  filename=log_file,
   level=default_log_level,
-  format=log_format,
+  handlers=[handler]
 )
 
 def with_logging(level: str = 'info'):

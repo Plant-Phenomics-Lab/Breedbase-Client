@@ -1,0 +1,47 @@
+{
+  "germplasm_0b574d63": {
+    "result_id": "germplasm_0b574d63",
+    "session_id": "39ca3afb-f9a3-454e-9dfc-d400f1b406a7",
+    "file_path": "C:\\Users\\yujer\\L_Documents\\Current Classes\\Breedbase-Client-refactor\\cache\\sweetpotatobase\\sessions\\39ca3afb-f9a3-454e-9dfc-d400f1b406a7\\germplasm_0b574d63.csv",
+    "format": "csv",
+    "row_count": 10,
+    "column_count": 24,
+    "columns": [
+      "germplasmOrigin",
+      "commonCropName",
+      "accessionNumber",
+      "seedSource",
+      "seedSourceDescription",
+      "donors",
+      "documentationURL",
+      "acquisitionDate",
+      "countryOfOriginCode",
+      "storageTypes",
+      "synonyms",
+      "genus",
+      "species",
+      "defaultDisplayName",
+      "instituteName",
+      "germplasmPUI",
+      "instituteCode",
+      "germplasmDbId",
+      "germplasmName",
+      "biologicalStatusOfAccessionCode",
+      "taxonIds",
+      "breedingMethodDbId",
+      "externalReferences",
+      "pedigree"
+    ],
+    "size_bytes": 3072,
+    "created_at": "2025-12-22T23:21:26.529731",
+    "metadata": {
+      "query": {
+        "service": "germplasm",
+        "db_id": null,
+        "sub": null,
+        "params": null
+      },
+      "endpoint": "germplasm"
+    }
+  }
+}
