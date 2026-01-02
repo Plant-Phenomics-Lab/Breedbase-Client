@@ -178,7 +178,11 @@ def register_generic_tools(
       return {'error': str(e), 'service': service, 'endpoint': endpoint}
 
   @server.tool()
-  def brapi_search(service: str, search_params: Dict, max_results: int = 100, session_id: Optional[str] = None, context: Context = None) -> dict:
+  def brapi_search(service: str, 
+                   search_params: Dict, 
+                   max_results: int = 100, 
+                   session_id: Optional[str] = None, 
+                   context: Context = None) -> dict:
 
     """
     **GENERIC FALLBACK** - Use specific search tools first if available!
