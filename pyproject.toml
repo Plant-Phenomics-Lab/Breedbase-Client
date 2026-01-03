@@ -10,7 +10,6 @@ dependencies = [
     "authlib",
     "python-dotenv",
     "mcp[cli]>=1.0.0",
-    "groq>=0.33.0",
     "pytest>=9.0.1",
     "fastmcp>=2.13.1",
     "inline-snapshot>=0.31.1",

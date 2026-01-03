@@ -106,16 +106,12 @@ def search_paginated(
   Returns:
       Tuple of (data, metadata)
   """
-  import requests
-
   # POST search request
-  search_url = f'{client.base_url}/search/{service}'
+  search_endpoint = f'search/{service}'
 
   try:
-    response = client.session.post(search_url, json=search_params, timeout=60)
-    response.raise_for_status()
-    search_response = response.json()
-  except requests.exceptions.RequestException as e:
+    search_response = client._post(search_endpoint, json=search_params)
+  except Exception as e:
     empty_meta = {
       'totalCount': 0,
       'returnedCount': 0,

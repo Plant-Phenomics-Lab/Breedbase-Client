@@ -1,4 +1,8 @@
+<div align="center">
+
 # BrAPI MCP Server
+
+</div>
 
 <div align="center">
 
@@ -6,9 +10,59 @@
 
 </div>
 
-# Tools Overview
+<div align="center">
 
-# Examples
+[![Version](https://img.shields.io/badge/Version-0.1.0-blue.svg)](./pyproject.toml)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?&logo=python&logoColor=white)](https://www.python.org/)
+[![MCP SDK](https://img.shields.io/badge/MCP-1.19.0-green.svg?style=flat-square)](https://modelcontextprotocol.io/)
+![fastmcp](https://img.shields.io/badge/fastmcp-2.13.1-orange)
+![UV](https://img.shields.io/badge/UV-^0.4.0-magenta)
+![Docker](https://img.shields.io/badge/Docker-blue?logo=docker&logoColor=white)
+
+</div>
+
+Jerry Yu, Akarsh Eathamukkala, Jay Shah, Benjamin Maza, Jerome Maleski
+
+# 🛠️ Tools Overview
+
+This server provides 9 powerful tools for accessing and analyzing plant breeding data from BrAPI-compatible servers:
+
+| Tool Name | Description |
+| :--- | :--- |
+| **Core BrAPI Access** | |
+| `describe_server_capabilities` | Returns a list of accesible endpoints and searchable filters for the BrAPI compliant server you are connected to. |
+| `brapi_get` | Fetches data from any BrAPI GET endpoint. Supports filtering by Database ID (DbID) and pagination. |
+| `brapi_search` | Performs advanced searches using BrAPI POST search endpoints. |
+| `get_image_search_parameters` | Retrieves valid filters for the image search endpoint. |
+| `download_images` | Downloads images from the BrAPI server to the local directory based on search criteria. |
+| **Data Processing & Management** (Mostly for the Model) | |
+| `get_result_summary` | Provides a summary of a saved result (columns, row count, size) without loading the full data. |
+| `load_result` | Loads a saved result (or a specific subset) into the conversation context for analysis. Supports pagination and column selection. |
+| `get_download_instructions` | Generates URLs and instructions for downloading a csv of saved results via HTTP. |
+| `quick_download_link` | Returns a direct download URL for a saved result, ideal for quick access. |
+
+You can access some example workflows in the [Examples](./Examples) folder. [Conversational_Workflow.md](./Examples/Conversational_Workflow.md) and [Covington_MetaAnalysis_EDA.md](./Examples/Covington_MetaAnalysis_EDA.md) show some workflows that incorporate some complex interactive filtering. VS Code Copilot with Claude Sonnet/Haiku 4.5 were used to for the workflows. 
+
+## Examples
+
+### `brapi_get`
+
+Download data from most BrAPI compatible servers. Generally use it to fetch data for subsequent searches. 
+
+**Example Use Cases:**
+- "Where are all the locations that sweetpotatoes have been trialed on?" 
+- "For the variantset with the dbID =5, what were the possible genotype calls?" 
+
+More examples [here](./Examples/Get.md). 
+
+### `brapi_search`
+Search and discover breeding data using advanced filters. Supports all search terms compatible with BrAPI. 
+
+**Example Use Cases:**
+- "Find all studies in 'Mozambique' with 'Advanced Yield Trial' type."
+- "Please download all data For the Advanced Yield Trial run at NCSU research station 1 during spring 2018."
+
+More examples [here](./Examples/Search.md). 
 
 # Getting Started
 

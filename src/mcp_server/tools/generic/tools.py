@@ -46,7 +46,7 @@ def register_generic_tools(
     service: str,
     db_id: Optional[str] = None,
     sub: Optional[str] = None,
-    params: Optional[Dict] = None,
+    # params: Optional[Dict] = None,
     max_results: int = 100,
     session_id: Optional[str] = None, 
     context: Context = None,
@@ -65,15 +65,21 @@ def register_generic_tools(
         session_id: Send session ID
 
     Examples:
-        brapi_get('studies')
+        brapi_get('studies', max_results=9999)
         brapi_get('studies', db_id='study123')
         brapi_get('variantsets', db_id='vs1', sub='calls')
+    
+    Tips: To Get ALL Observations, set max_results very high (9999). 
 
     Returns:
         Metadata about the query and result_id for accessing data
     """
     # TODO :: Return complete data in any case?
     return_data = False
+    
+    # Since searchign with params is iffy for get, this is disabled. 
+    params = {}
+
     # Check capabilities
     if not check_endpoint_exists(capabilities, service):
       return {
@@ -98,7 +104,19 @@ def register_generic_tools(
 
     # Fetch data
     try:
-      max_results = min(max_results, 500)
+      # Fixed
+      # max_results = min(max_results, 500)
+      # Automatic
+      _, initial_metadata = fetch_paginated(
+        client=client,
+        endpoint=endpoint,
+        params=params,
+        max_pages=1,
+        pagesize=1,
+        as_dataframe=False,
+      )
+      max_results = min(max_results, int(initial_metadata.get('totalCount', 1000)))
+      
       max_pages = max_results // 100 + 1
 
       df, metadata = fetch_paginated(
@@ -120,8 +138,7 @@ def register_generic_tools(
           json.dumps({
               "service": service,
               "db_id": db_id,
-              "sub": sub,
-              "params": params
+              "sub": sub
           }, sort_keys=True).encode()
       ).hexdigest()[:8]
       result_id = f"{service}_{query_hash}"
@@ -133,9 +150,10 @@ def register_generic_tools(
           metadata={
               "query": {
                   "service": service,
+                  "endpoint": endpoint,
                   "db_id": db_id,
                   "sub": sub,
-                  "params": params
+                  # "params": params
               },
               "endpoint": endpoint
           },
@@ -143,14 +161,12 @@ def register_generic_tools(
       )
 
       response = {
-          "result_id": result_id,
-          "session_id": active_session_id,
-          "query": {
-              "service": service,
-              "endpoint": endpoint,
-              "db_id": db_id,
-              "params": params
-          },
+          # "result_id": result_id,
+          # "session_id": active_session_id,
+          # "query": {
+          #     "service": service,
+          #     "db_id": db_id
+          # },
           "summary": {
               "total_count": metadata.get('totalCount', len(df)),
               "returned_count": len(df),
@@ -186,6 +202,10 @@ def register_generic_tools(
 
     """
     **GENERIC FALLBACK** - Use specific search tools first if available!
+    Tips: 
+    - Please be sure of your search parameters before searching. If you are unsure of parameter values run a GET first. 
+    - To Get ALL Observations, set max_results very high (9999).
+    - search by DbID whenever possible. "observationVariableDbIds": ["76552"] is always better than "observationVariableNamess": ["long, complicated description"]
 
     Search using POST /search/{service} endpoint.
 
@@ -197,7 +217,7 @@ def register_generic_tools(
 
     Examples:
         brapi_search('locations', {'countryNames': ['Mozambique']})
-        brapi_search('studies', {'studyTypes': ['Advanced Yield Trial'],'locationDbIds': ['80']})
+        brapi_search('studies', {'studyTypes': ['Advanced Yield Trial'],'locationDbIds': ['80']}, max_results=9999)
 
     Returns:
         Metadata about the search and result_id for accessing data
@@ -217,7 +237,19 @@ def register_generic_tools(
     result_cache, active_session_id = get_session_cache(context, session_id)
     # Execute search
     try:
-      max_results = min(max_results, 500)
+      # Fixed
+      # max_results = min(max_results, 500)
+      # Automatic
+      _, initial_metadata = metadata = search_paginated(
+        client=client,
+        service=service,
+        search_params=search_params,
+        max_pages=1,
+        pagesize=1,
+        as_dataframe=False,
+      )
+      max_results = min(max_results, int(initial_metadata.get('totalCount', 1000)))
+
       max_pages = max_results // 100 + 1
 
       df, metadata = search_paginated(
@@ -257,12 +289,12 @@ def register_generic_tools(
       )
 
       response = {
-          "result_id": result_id,
-          'session_id': active_session_id,
-          "query": {
-              "service": service,
-              "search_params": search_params
-          },
+          # "result_id": result_id,
+          # 'session_id': active_session_id,
+          # "query": {
+          #     "service": service,
+          #     "search_params": search_params
+          # },
           "summary": {
               "total_matches": metadata.get('totalCount', len(df)),
               "returned_count": len(df),
