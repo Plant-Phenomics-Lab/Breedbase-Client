@@ -10,7 +10,91 @@ This document demonstrates the exploratory workflow for identifying and retrievi
 
 ---
 
-## Step 1: Search for Covington Studies
+## Step 1: Check Server Capabilities
+
+**Assistant:** Let me first check what endpoints are available on sweetpotatobase.
+
+**Tool Call:**
+
+```json
+describe_server_capabilities()
+```
+
+**Response:**
+
+```json
+{
+  "server": "sweetpotatobase",
+  "modules": {
+    "core": [
+      {"name": "studies", "supports_search": true, "supports_id": true, "sub_resources": null},
+      {"name": "locations", "supports_search": true, "supports_id": true, "sub_resources": null},
+      {"name": "programs", "supports_search": true, "supports_id": true, "sub_resources": null}
+    ],
+    "phenotyping": [
+      {"name": "observations", "supports_search": true, "supports_id": true, "sub_resources": null},
+      {"name": "observationunits", "supports_search": true, "supports_id": true, "sub_resources": null},
+      {"name": "variables", "supports_search": true, "supports_id": true, "sub_resources": null}
+    ],
+    "germplasm": [
+      {"name": "germplasm", "supports_search": false, "supports_id": true, "sub_resources": null}
+    ]
+  },
+  "usage": {
+    "note": "Use brapi_get() and brapi_search() tools with any service name",
+    "examples": {
+      "list": "brapi_get('studies')",
+      "search": "brapi_search('studies', search_params={'germplasmNames': ['Covington']})"
+    }
+  }
+}
+```
+
+**Assistant:** Great! The server supports studies search with germplasm filters. Let me check what search parameters are available for studies.
+
+---
+
+## Step 2: Check Study Search Parameters
+
+**Tool Call:**
+
+```json
+get_search_parameters("studies")
+```
+
+**Response:**
+
+```json
+{
+  "service": "studies",
+  "search_endpoint": "search/studies",
+  "parameters": {
+    "germplasmNames": {
+      "type": "array",
+      "description": "List of human readable names to identify germplasm to search for",
+      "example": ["A0000003", "A0000477"]
+    },
+    "germplasmDbIds": {
+      "type": "array",
+      "description": "List of IDs which uniquely identify germplasm to search for"
+    },
+    "locationDbIds": {
+      "type": "array",
+      "description": "The location ids to search for"
+    },
+    "studyTypes": {
+      "type": "array",
+      "description": "The type of study being performed. ex. 'Yield Trial', etc"
+    }
+  }
+}
+```
+
+**Assistant:** Perfect! I can search by `germplasmNames`. Let me search for Covington studies with different case variations.
+
+---
+
+## Step 3: Search for Covington Studies
 
 **Assistant:** I'll search for studies with "Covington" germplasm using different case variations to ensure we capture everything.
 
@@ -133,7 +217,51 @@ Study types include yield trials, disease ratings, crossing blocks, and clonal e
 - **Namulonge-NaCRRI**: 3 studies  
 - **Serere-NaSARRI**: 5 studies
 
-**Assistant:** Now let me check observations from UGN2020ABI_PT01 to see what traits were measured.
+---
+
+## Step 5: Check Observation Search Parameters
+
+**Assistant:** Before searching observations, let me check what search parameters are available.
+
+**Tool Call:**
+
+```json
+get_search_parameters("observations")
+```
+
+**Response:**
+
+```json
+{
+  "service": "observations",
+  "search_endpoint": "search/observations",
+  "parameters": {
+    "studyDbIds": {
+      "type": "array",
+      "description": "List of study identifiers to search for"
+    },
+    "observationVariableDbIds": {
+      "type": "array",
+      "description": "List of observation variable IDs to search for"
+    },
+    "germplasmDbIds": {
+      "type": "array",
+      "description": "List of IDs which uniquely identify germplasm"
+    },
+    "observationUnitDbIds": {
+      "type": "array",
+      "description": "List of observation unit identifiers"
+    }
+  },
+  "note": "All parameters are optional. Combine multiple parameters to narrow results."
+}
+```
+
+**Assistant:** Perfect! I can filter by `studyDbIds` and `observationVariableDbIds`. Let me check observations from UGN2020ABI_PT01 to see what traits were measured.
+
+---
+
+## Step 6: Retrieve Observations from Sample Study
 
 **Tool Call:**
 
@@ -206,9 +334,9 @@ This is a comprehensive yield trial with disease, quality, and agronomic measure
 
 ---
 
-## Step 5: Find Studies with Target Traits
+## Step 7: Find Studies with Target Traits
 
-**Assistant:** I need to get the observationVariableDbIds first to search properly.
+**Assistant:** I need to get the observationVariableDbIds first to search properly. I can use `observationVariableDbIds` from the search parameters I checked earlier.
 
 **Load Variable IDs:**
 

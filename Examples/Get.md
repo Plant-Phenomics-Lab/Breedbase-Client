@@ -139,8 +139,8 @@ Retrieves sub-resources associated with a parent resource (e.g., calls for a spe
   "access": {
     "resource": "brapi://results/3d19eff5-c624-46a4-8979-7e279e93ab4a/variantsets_5e7de10d",
     "tools": {
+```
 ---
-
 ## Notes
 
 ### Use Cases

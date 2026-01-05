@@ -34,35 +34,35 @@ class ServerCapabilities:
 
   def to_llm_format(self) -> Dict:
       """
-      Simple format for LLM: Just list available services by module.
-      LLM doesn't need to know about methods, IDs, search support, etc.
-      TODO:: The tools must handle all of that.
+      Simple format for LLM, list of base services by module + whether they support search, DBID or submodules.
       """
-      # Consolidate endpoints to base services only
-      modules = {}
-      
-      for module_name, module in self.modules.items():
-          # Extract unique base service names (remove /{id} variants)
-          services = set()
-          for path in module.endpoints.keys():
-              base_service = self._get_base_service(path)
-              if base_service:
-                  services.add(base_service)
+      consolidated = self.consolidate_modules()
+      llm_formatted_modules = {}
+
+      for module_name, module in consolidated["modules"].items():
+          services_list = []
           
-          if services:
-              modules[module_name] = sorted(list(services))
+          for service_dict in module["services"]:
+              services_list.append({
+                  "name": service_dict["name"],
+                  "supports_search": service_dict["supports_search"],
+                  "supports_id": service_dict["supports_id"],
+                  "sub_resources": service_dict["sub_resources"]
+              })
+          
+          llm_formatted_modules[module_name] = services_list
 
       return {
           "server": self.server_name,
-          "modules": modules,
-          "usage": {
+          "modules": llm_formatted_modules,
+           "usage": {
               "note": "Use brapi_get() and brapi_search() tools with any service name",
               "examples": {
                   "list": "brapi_get('studies')",
                   "get_by_id": "brapi_get('studies', db_id='study123')",
                   "search": "brapi_search('studies', search_params={'studyName': 'Trial2024'})"
               }
-          }
+           }
       }
 
   def _get_base_service(self, path: str) -> Optional[str]:
