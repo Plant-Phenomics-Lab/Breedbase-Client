@@ -85,7 +85,6 @@ dependencies = [
     { name = "authlib" },
     { name = "fastapi" },
     { name = "fastmcp" },
-    { name = "groq" },
     { name = "inline-snapshot" },
     { name = "mcp", extra = ["cli"] },
     { name = "pandas" },
@@ -102,7 +101,6 @@ requires-dist = [
     { name = "authlib" },
     { name = "fastapi", specifier = ">=0.123.4" },
     { name = "fastmcp", specifier = ">=2.13.1" },
-    { name = "groq", specifier = ">=0.33.0" },
     { name = "inline-snapshot", specifier = ">=0.31.1" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.0.0" },
     { name = "pandas" },
@@ -383,15 +381,6 @@ wheels = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
-]
-
-[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -491,23 +480,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c8/7a/4c6375a56f7458a4a6af62f4c4838a2c957a665cf5edad26fe95395666f1/fastmcp-2.13.2.tar.gz", hash = "sha256:2a206401a6579fea621974162674beba85b467ad72c70c1a3752a31951dff7f0", size = 8185950, upload-time = "2025-12-01T18:48:16.834Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/4b/73c68b0ae9e587f20c5aa13ba5bed9be2bb9248a598555dafcf17df87f70/fastmcp-2.13.2-py3-none-any.whl", hash = "sha256:300c59eb970c235bb9d0575883322922e4f2e2468a3d45e90cbfd6b23b7be245", size = 385643, upload-time = "2025-12-01T18:48:18.515Z" },
-]
-
-[[package]]
-name = "groq"
-version = "0.34.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "distro" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8d/a8/a66425c56936feafd1afd94158ad4867e64c98b7e96f212913f4830f2ca9/groq-0.34.0.tar.gz", hash = "sha256:b0d8b9eeb30c06e1596adf7f0139d9ad73490ece14df8e3a68889f7b419df63c", size = 143418, upload-time = "2025-11-12T20:50:53.742Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/4b/c2ca8254d2a99adc0ad9f95b62a11ca812c323e357fcdce4abe272005520/groq-0.34.0-py3-none-any.whl", hash = "sha256:0ffe7d87dd589e8ec3fb71860c840c6a9608a812939cbd5b02178e98c0d849f7", size = 135986, upload-time = "2025-11-12T20:50:52.243Z" },
 ]
 
 [[package]]

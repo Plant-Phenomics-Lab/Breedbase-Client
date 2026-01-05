@@ -76,9 +76,17 @@ More examples [here](./Examples/Search.md).
 
 ``` shell
 git clone https://github.com/Plant-Phenomics-Lab/Breedbase-Client
+
+```
+2. Create UV Environment
+```shell
+cd Breedbase-Client
+uv venv
+.venv\Scripts\activate
+uv sync
 ```
 
-2. Configure the enviroment variables. You can set these in a `.env` file, pass them via your MCP client config, or use Docker environment variables. You must configure `BASE_URL` for your server to work. 
+3. Configure the enviroment variables. You can set these in a `.env` file, pass them via your MCP client config, or use Docker environment variables. You must configure `BASE_URL` for your server to work. 
 
 **Key Variables**
 
@@ -100,7 +108,7 @@ cp .env.example .env
 # Then edit the file with your favorite text editor. 
 ```
 
-3. Configure the server. 
+4. Configure the server. 
 
 For STDIO, can can just add this command to your MCP Client Configuration file (ex `claude.json`).
 
