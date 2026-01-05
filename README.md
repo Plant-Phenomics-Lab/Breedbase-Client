@@ -25,7 +25,7 @@ Jerry Yu, Akarsh Eathamukkala, Jay Shah, Benjamin Maza, Jerome Maleski
 
 # 🛠️ Tools Overview
 
-This server provides 9 powerful tools for accessing and analyzing plant breeding data from BrAPI-compatible servers:
+This server provides 10 powerful tools for accessing and analyzing plant breeding data from BrAPI-compatible servers:
 
 | Tool Name | Description |
 | :--- | :--- |
@@ -33,6 +33,7 @@ This server provides 9 powerful tools for accessing and analyzing plant breeding
 | `describe_server_capabilities` | Returns a list of accesible endpoints and searchable filters for the BrAPI compliant server you are connected to. |
 | `brapi_get` | Fetches data from any BrAPI GET endpoint. Supports filtering by Database ID (DbID) and pagination. |
 | `brapi_search` | Performs advanced searches using BrAPI POST search endpoints. |
+| `get_search_parameters` | Gets valid search parameters for a specific service. Use before `brapi_search` to see available filters. |
 | `get_image_search_parameters` | Retrieves valid filters for the image search endpoint. |
 | `download_images` | Downloads images from the BrAPI server to the local directory based on search criteria. |
 | **Data Processing & Management** (Mostly for the Model) | |
@@ -63,6 +64,16 @@ Search and discover breeding data using advanced filters. Supports all search te
 - "Please download all data For the Advanced Yield Trial run at NCSU research station 1 during spring 2018."
 
 More examples [here](./Examples/Search.md). 
+
+### `download_images`
+Download images from BrAPI servers with optional search filters.
+
+**Example Use Cases:**
+- "Download 10 images from the database."
+- "Download all images with height greater than 300 pixels."
+- "Get images associated with observation unit 12345."
+
+More examples [here](./Examples/Pictures.md). 
 
 # Getting Started
 
