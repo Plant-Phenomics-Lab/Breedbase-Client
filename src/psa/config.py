@@ -13,6 +13,7 @@ class PSAConfig:
     auth_type: str
     username: Optional[str]
     password: Optional[str]
+    data_dir: str
 
     @classmethod
     def from_env(cls) -> "PSAConfig":
@@ -24,6 +25,7 @@ class PSAConfig:
             BRAPI_AUTH_TYPE: Authentication type - "sgn" or "none" (default: "none")
             BRAPI_USERNAME: Username for authentication (required if auth_type="sgn")
             BRAPI_PASSWORD: Password for authentication (required if auth_type="sgn")
+            BRAPI_DATA_DIR: Directory for downloaded data (default: "./data")
 
         Returns:
             PSAConfig instance
@@ -38,6 +40,7 @@ class PSAConfig:
         auth_type = os.environ.get("BRAPI_AUTH_TYPE", "none").lower()
         username = os.environ.get("BRAPI_USERNAME")
         password = os.environ.get("BRAPI_PASSWORD")
+        data_dir = os.environ.get("BRAPI_DATA_DIR", "./data")
 
         if auth_type == "sgn" and (not username or not password):
             raise ValueError(
@@ -49,6 +52,7 @@ class PSAConfig:
             auth_type=auth_type,
             username=username,
             password=password,
+            data_dir=data_dir,
         )
 
 

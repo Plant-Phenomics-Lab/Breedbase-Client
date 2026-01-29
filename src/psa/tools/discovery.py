@@ -111,6 +111,7 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
         location_db_id: Optional[str] = None,
         common_crop_name: Optional[str] = None,
         trial_name: Optional[str] = None,
+        year: Optional[str] = None,
         active: Optional[bool] = None,
         page_size: int = 100,
     ) -> str:
@@ -120,11 +121,17 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
         Trials are collections of studies testing specific hypotheses.
         Use this to find trials and get trialDbId for querying studies.
 
+        NOTE: When searching by date or time period, use the 'year' parameter.
+        Trials are organized by growing season (e.g., "2023", "2024"). Trial
+        names often include the year (e.g., "2024_season"). For multi-year
+        queries, call this tool multiple times with different year values.
+
         Args:
             program_db_id: Filter by breeding program ID
             location_db_id: Filter by location ID
             common_crop_name: Filter by crop name
-            trial_name: Filter by trial name (partial match)
+            trial_name: Filter by trial name (partial match, e.g., "2024" for 2024 trials)
+            year: Filter by season year (e.g., "2023", "2024") - use this for time-based queries
             active: Filter by active status (True/False)
             page_size: Maximum number of results (default 100)
 
@@ -140,6 +147,8 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
             params["commonCropName"] = common_crop_name
         if trial_name:
             params["trialName"] = trial_name
+        if year:
+            params["seasonDbId"] = year  # In BrAPI, seasonDbId often equals year
         if active is not None:
             params["active"] = str(active).lower()
 

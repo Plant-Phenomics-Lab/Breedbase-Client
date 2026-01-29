@@ -18,6 +18,7 @@ def register_study_tools(server: FastMCP, client: BrAPIClient) -> None:
         location_db_id: Optional[str] = None,
         common_crop_name: Optional[str] = None,
         study_name: Optional[str] = None,
+        year: Optional[str] = None,
         season_db_id: Optional[str] = None,
         active: Optional[bool] = None,
         page_size: int = 100,
@@ -29,13 +30,18 @@ def register_study_tools(server: FastMCP, client: BrAPIClient) -> None:
         are recorded. Use this to find studies and get studyDbId for
         retrieving observations.
 
+        NOTE: When searching by date or time period, use the 'year' parameter.
+        Studies are organized by growing season (e.g., "2023", "2024"). For
+        multi-year queries, call this tool multiple times with different year values.
+
         Args:
             trial_db_id: Filter by trial ID (get from search_trials)
             program_db_id: Filter by breeding program ID
             location_db_id: Filter by location ID
             common_crop_name: Filter by crop name
             study_name: Filter by study name (partial match)
-            season_db_id: Filter by season ID
+            year: Filter by season year (e.g., "2023", "2024") - use this for time-based queries
+            season_db_id: Filter by season ID (alternative to year)
             active: Filter by active status (True/False)
             page_size: Maximum number of results (default 100)
 
@@ -53,6 +59,8 @@ def register_study_tools(server: FastMCP, client: BrAPIClient) -> None:
             params["commonCropName"] = common_crop_name
         if study_name:
             params["studyName"] = study_name
+        if year:
+            params["seasonDbId"] = year  # In BrAPI, seasonDbId often equals year
         if season_db_id:
             params["seasonDbId"] = season_db_id
         if active is not None:

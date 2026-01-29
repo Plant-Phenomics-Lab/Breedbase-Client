@@ -1,15 +1,22 @@
 """Observation tools for BrAPI Phenotyping endpoints."""
 
 import json
+import os
+import re
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastmcp import FastMCP
 
 from psa.client import BrAPIClient
+from psa.config import PSAConfig
 
 
-def register_observation_tools(server: FastMCP, client: BrAPIClient) -> None:
+def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Optional[PSAConfig] = None) -> None:
     """Register observation tools with the MCP server."""
+
+    # Default data directory if config not provided
+    data_dir = config.data_dir if config else "./data"
 
     @server.tool()
     def get_observations(
@@ -100,3 +107,88 @@ def register_observation_tools(server: FastMCP, client: BrAPIClient) -> None:
         response = client.get("/variables", params=params)
         data = response.get("result", {}).get("data", [])
         return json.dumps(data, indent=2)
+
+    @server.tool()
+    def download_study(
+        study_db_id: str,
+        include_metadata: bool = True,
+    ) -> str:
+        """
+        Download all observations from a study and save to a local file.
+
+        Fetches all observation data (with pagination) and saves it to the
+        data directory with a descriptive filename. Use this when the user
+        wants to save or export study data locally.
+
+        Args:
+            study_db_id: The study ID to download (required)
+            include_metadata: Include study metadata in the output file (default True)
+
+        Returns:
+            JSON with download status including:
+            - file_path: Path to the saved file
+            - study_name: Name of the study
+            - observation_count: Number of observations downloaded
+            - file_size_kb: Size of the saved file in KB
+        """
+        # Get study details for metadata and naming
+        study_response = client.get(f"/studies/{study_db_id}")
+        study = study_response.get("result", {})
+
+        study_name = study.get("studyName", f"study_{study_db_id}")
+        program_name = study.get("additionalInfo", {}).get("programName", "unknown")
+        seasons = study.get("seasons", [])
+        year = seasons[0] if seasons else "unknown"
+
+        # Fetch all observations with pagination
+        all_observations = []
+        page = 0
+        while True:
+            response = client.get(
+                "/observations",
+                params={"studyDbId": study_db_id, "pageSize": 1000, "page": page}
+            )
+            data = response.get("result", {}).get("data", [])
+            if not data:
+                break
+            all_observations.extend(data)
+            page += 1
+            if len(data) < 1000:
+                break
+
+        # Create data directory if it doesn't exist
+        os.makedirs(data_dir, exist_ok=True)
+
+        # Create filename: {program}_{year}_{study_name}.json
+        # Sanitize filename (remove special characters)
+        safe_study_name = re.sub(r'[^\w\-]', '_', study_name)
+        safe_program = re.sub(r'[^\w\-]', '_', program_name)
+        filename = f"{safe_program}_{year}_{safe_study_name}.json"
+        file_path = os.path.join(data_dir, filename)
+
+        # Prepare output data
+        output = {
+            "downloaded_at": datetime.now(timezone.utc).isoformat(),
+            "study_db_id": study_db_id,
+            "observation_count": len(all_observations),
+            "observations": all_observations,
+        }
+
+        if include_metadata:
+            output["study_metadata"] = study
+
+        # Write to file
+        with open(file_path, "w") as f:
+            json.dump(output, f, indent=2)
+
+        file_size_kb = os.path.getsize(file_path) / 1024
+
+        return json.dumps({
+            "status": "success",
+            "file_path": os.path.abspath(file_path),
+            "study_name": study_name,
+            "program": program_name,
+            "year": year,
+            "observation_count": len(all_observations),
+            "file_size_kb": round(file_size_kb, 2),
+        }, indent=2)

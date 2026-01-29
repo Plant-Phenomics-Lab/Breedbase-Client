@@ -42,7 +42,7 @@ def create_server() -> FastMCP:
     # Register all tool groups
     register_discovery_tools(server, client)
     register_study_tools(server, client)
-    register_observation_tools(server, client)
+    register_observation_tools(server, client, config)
     register_germplasm_tools(server, client)
 
     return server
