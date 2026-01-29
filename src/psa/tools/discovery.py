@@ -84,8 +84,11 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
         """
         List available seasons.
 
-        Use this to discover growing seasons and get seasonDbId values
-        for filtering trials and studies.
+        IMPORTANT: Use this tool when users ask about years, dates, or time
+        periods. In plant breeding, data is organized by growing SEASON
+        (typically a year like "2023", "2024"). This tool shows what seasons
+        have data available. Use the returned seasonDbId (often equals year)
+        with search_studies to find studies from specific seasons.
 
         Args:
             year: Filter by year (e.g., "2023")
@@ -111,7 +114,6 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
         location_db_id: Optional[str] = None,
         common_crop_name: Optional[str] = None,
         trial_name: Optional[str] = None,
-        year: Optional[str] = None,
         active: Optional[bool] = None,
         page_size: int = 100,
     ) -> str:
@@ -121,17 +123,18 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
         Trials are collections of studies testing specific hypotheses.
         Use this to find trials and get trialDbId for querying studies.
 
-        NOTE: When searching by date or time period, use the 'year' parameter.
-        Trials are organized by growing season (e.g., "2023", "2024"). Trial
-        names often include the year (e.g., "2024_season"). For multi-year
-        queries, call this tool multiple times with different year values.
+        NOTE ON TIME-BASED QUERIES: When users ask for data by year, date, or
+        time period, they are asking about growing SEASONS. Use list_seasons
+        to find available seasons, then use search_studies with the year
+        parameter to find studies from that season. Trial names often include
+        the year (e.g., "2024_season") but this endpoint does not support
+        year/season filtering directly.
 
         Args:
             program_db_id: Filter by breeding program ID
             location_db_id: Filter by location ID
             common_crop_name: Filter by crop name
-            trial_name: Filter by trial name (partial match, e.g., "2024" for 2024 trials)
-            year: Filter by season year (e.g., "2023", "2024") - use this for time-based queries
+            trial_name: Filter by exact trial name (e.g., "2024_season")
             active: Filter by active status (True/False)
             page_size: Maximum number of results (default 100)
 
@@ -147,8 +150,6 @@ def register_discovery_tools(server: FastMCP, client: BrAPIClient) -> None:
             params["commonCropName"] = common_crop_name
         if trial_name:
             params["trialName"] = trial_name
-        if year:
-            params["seasonDbId"] = year  # In BrAPI, seasonDbId often equals year
         if active is not None:
             params["active"] = str(active).lower()
 

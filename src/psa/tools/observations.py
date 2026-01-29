@@ -1,5 +1,6 @@
 """Observation tools for BrAPI Phenotyping endpoints."""
 
+import csv
 import json
 import os
 import re
@@ -10,6 +11,47 @@ from fastmcp import FastMCP
 
 from psa.client import BrAPIClient
 from psa.config import PSAConfig
+
+# CSV columns for observation export (matches reference format)
+CSV_COLUMNS = [
+    "observationVariableDbId",
+    "observationUnitName",
+    "value",
+    "observationDbId",
+    "studyDbId",
+    "observationUnitDbId",
+    "germplasmDbId",
+    "observationVariableName",
+    "germplasmName",
+    "uploadedBy",
+    "collector",
+    "season.season",
+    "season.year",
+    "season.seasonDbId",
+]
+
+
+def flatten_observation(obs: dict) -> dict:
+    """Flatten nested season data for CSV export.
+
+    Args:
+        obs: A BrAPI observation object with potentially nested season data.
+
+    Returns:
+        A flat dictionary with season fields extracted to dot-notation keys.
+    """
+    flat = {}
+    # Copy top-level fields
+    for col in CSV_COLUMNS[:11]:  # All non-season columns
+        flat[col] = obs.get(col, "")
+
+    # Flatten nested season data
+    season = obs.get("season", {}) or {}
+    flat["season.season"] = season.get("season", "")
+    flat["season.year"] = season.get("year", "")
+    flat["season.seasonDbId"] = season.get("seasonDbId", "")
+
+    return flat
 
 
 def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Optional[PSAConfig] = None) -> None:
@@ -111,6 +153,7 @@ def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Opt
     @server.tool()
     def download_study(
         study_db_id: str,
+        output_format: str = "json",
         include_metadata: bool = True,
     ) -> str:
         """
@@ -122,7 +165,8 @@ def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Opt
 
         Args:
             study_db_id: The study ID to download (required)
-            include_metadata: Include study metadata in the output file (default True)
+            output_format: Output format - "json" (default) or "csv"
+            include_metadata: Include study metadata in JSON output (default True, ignored for CSV)
 
         Returns:
             JSON with download status including:
@@ -131,6 +175,13 @@ def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Opt
             - observation_count: Number of observations downloaded
             - file_size_kb: Size of the saved file in KB
         """
+        # Validate output format
+        output_format = output_format.lower()
+        if output_format not in ("json", "csv"):
+            return json.dumps({
+                "status": "error",
+                "message": f"Invalid output_format '{output_format}'. Use 'json' or 'csv'."
+            }, indent=2)
         # Get study details for metadata and naming
         study_response = client.get(f"/studies/{study_db_id}")
         study = study_response.get("result", {})
@@ -159,33 +210,47 @@ def register_observation_tools(server: FastMCP, client: BrAPIClient, config: Opt
         # Create data directory if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
 
-        # Create filename: {program}_{year}_{study_name}.json
-        # Sanitize filename (remove special characters)
+        # Sanitize filename components (remove special characters)
         safe_study_name = re.sub(r'[^\w\-]', '_', study_name)
         safe_program = re.sub(r'[^\w\-]', '_', program_name)
-        filename = f"{safe_program}_{year}_{safe_study_name}.json"
-        file_path = os.path.join(data_dir, filename)
 
-        # Prepare output data
-        output = {
-            "downloaded_at": datetime.now(timezone.utc).isoformat(),
-            "study_db_id": study_db_id,
-            "observation_count": len(all_observations),
-            "observations": all_observations,
-        }
+        if output_format == "csv":
+            # Create filename: {program}_{year}_{study_name}.csv
+            filename = f"{safe_program}_{year}_{safe_study_name}.csv"
+            file_path = os.path.join(data_dir, filename)
 
-        if include_metadata:
-            output["study_metadata"] = study
+            # Write CSV file
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction="ignore")
+                writer.writeheader()
+                for obs in all_observations:
+                    writer.writerow(flatten_observation(obs))
+        else:
+            # Create filename: {program}_{year}_{study_name}.json
+            filename = f"{safe_program}_{year}_{safe_study_name}.json"
+            file_path = os.path.join(data_dir, filename)
 
-        # Write to file
-        with open(file_path, "w") as f:
-            json.dump(output, f, indent=2)
+            # Prepare output data
+            output = {
+                "downloaded_at": datetime.now(timezone.utc).isoformat(),
+                "study_db_id": study_db_id,
+                "observation_count": len(all_observations),
+                "observations": all_observations,
+            }
+
+            if include_metadata:
+                output["study_metadata"] = study
+
+            # Write JSON file
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(output, f, indent=2)
 
         file_size_kb = os.path.getsize(file_path) / 1024
 
         return json.dumps({
             "status": "success",
             "file_path": os.path.abspath(file_path),
+            "format": output_format,
             "study_name": study_name,
             "program": program_name,
             "year": year,
