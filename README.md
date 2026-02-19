@@ -89,7 +89,7 @@ More examples [here](./Examples/Pictures.md).
 git clone https://github.com/Plant-Phenomics-Lab/Breedbase-Client
 
 ```
-2. Create UV Environment
+2. Create UV Environment. You must have `uv` installed to run the MCP server locally. 
 ```shell
 cd Breedbase-Client
 uv venv
