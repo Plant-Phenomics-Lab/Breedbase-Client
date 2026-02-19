@@ -1,6 +1,8 @@
 # Temp Dir
 /.brapi_temp
 /Downloads
+/cache
+/Data
 .env
 
 # Python
