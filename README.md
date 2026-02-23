@@ -197,7 +197,5 @@ Then connect the server. Remember to use the port you configured.
 
 This project is under active development. Contributions and feedback are welcome!
 
-## License
-
-[Add your license information here]
+- The current branch is `main`. Feel free toignore everything else :). 
 
