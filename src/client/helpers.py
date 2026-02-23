@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import re
+from pathlib import Path
 
 from client.client import BrapiClient
 from config.type import BrapiServerConfig
@@ -183,9 +184,21 @@ def download_images_batch(
   failed = []
 
   for idx, record in enumerate(image_records):
-    image_name = str(record.get('imageName', record.get('imageFileName', f'image_{idx}')))
-    image_url = record.get('imageURL')
+    # Priority: imageName -> imageDbId -> imageFileName -> fallback
+    image_name = record.get('imageName')
     image_id = record.get('imageDbId', f'unknown_{idx}')
+    image_url = record.get('imageURL')
+    
+    if not image_name or image_name == 'None':
+      image_name = image_id or record.get('imageFileName') or f'image_{idx}'
+      
+      # Add extension from URL if using imageDbId and name doesn't have one
+      if image_name == image_id and '.' not in str(image_name) and image_url:
+        ext = Path(image_url).suffix  # Extract extension from URL (e.g., '.jpg')
+        if ext:
+          image_name = f"{image_name}{ext}"
+    
+    image_name = str(image_name)
 
     if not image_url:
       failed.append(

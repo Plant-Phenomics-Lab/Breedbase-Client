@@ -112,12 +112,6 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
   
     # Make authentication request
     response = requests.post(self.token_url, data=payload)
-    
-    # DEBUG
-    print(payload, file=sys.stderr)
-    print(response.url, file=sys.stderr)
-    print(username, file=sys.stderr)
-    print(password, file=sys.stderr)
 
     # Raise exception if authentication failed
     response.raise_for_status()

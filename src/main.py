@@ -42,7 +42,8 @@ if __name__ == '__main__':
     # This ensures old logs/downloads are removed regardless of how the server stops
     cleanup_old_files(config, days=30)
 
-    if config.mode == 'stdio':
+    if config.mode.lower() == 'stdio':
+        
         # 1. Start HTTP server in a background thread (Daemon)
         # Bind to 127.0.0.1 for security in local mode
         # Use 'error' log level to keep stdout clean for MCP

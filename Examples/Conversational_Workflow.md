@@ -10,9 +10,64 @@ This document demonstrates a realistic conversational workflow for discovering a
 
 ---
 
-## Step 1: Discover Locations in Uganda
+## Step 1: Check Server Capabilities
 
-**Assistant:** Let me first get all locations and identify which ones are in Uganda.
+**Assistant:** Let me first check what endpoints are available on this server.
+
+**Tool Call:**
+
+```json
+describe_server_capabilities()
+```
+
+**Response:**
+
+```json
+{
+  "server": "musabase",
+  "modules": {
+    "core": [
+      {
+        "name": "lists",
+        "supports_search": true,
+        "supports_id": true,
+        "sub_resources": null
+      },
+      {
+        "name": "locations",
+        "supports_search": true,
+        "supports_id": true,
+        "sub_resources": null
+      },
+ // Other Endpoints
+    ],
+    "other": [
+      {
+        "name": "pedigree",
+        "supports_search": false,
+        "supports_id": false,
+        "sub_resources": null
+      }
+    ]
+  },
+  "usage": {
+    "note": "Use brapi_get() and brapi_search() tools with any service name",
+    "examples": {
+      "list": "brapi_get('studies')",
+      "get_by_id": "brapi_get('studies', db_id='study123')",
+      "search": "brapi_search('studies', search_params={'studyName': 'Trial2024'})"
+    }
+  }
+}
+```
+
+**Assistant:** Great! The server supports locations and studies with search capabilities. Let me get all locations and identify which ones are in Uganda.
+
+---
+
+## Step 2: Discover Locations in Uganda
+
+**Assistant:** Now I'll retrieve all locations to find the ones in Uganda.
 
 **BrAPI Server:** musabase
 
@@ -75,11 +130,41 @@ This document demonstrates a realistic conversational workflow for discovering a
 | 35 | Ikulwe | Uganda | UGA |
 | 36 | Ngetta | Uganda | UGA |
 
-**Assistant:** I found 6 locations in Uganda. Now let me search for studies at these locations.
+**Assistant:** I found 6 locations in Uganda. Now let me check what search parameters are available for studies before searching.
 
 ---
 
-## Step 2: Search Studies in Uganda
+## Step 3: Check Study Search Parameters
+
+**Tool Call:**
+
+```json
+get_search_parameters("studies")
+```
+
+**Response:**
+
+```json
+{
+  "service": "studies",
+  "search_endpoint": "search/studies",
+  "parameters": {
+    "locationDbIds": {
+      "type": "array",
+      "description": "The location ids to search for",
+      "example": ["b28911cf", "5071d1e4"]
+ // Other Searchable Parameters
+    }
+  },
+  "note": "All parameters are optional. Combine multiple parameters to narrow results."
+}
+```
+
+**Assistant:** Perfect! I can filter by `locationDbIds` to find studies in Uganda. Let me search for all studies at these locations.
+
+---
+
+## Step 4: Search Studies in Uganda
 
 **Tool Call:**
 
@@ -147,7 +232,9 @@ This document demonstrates a realistic conversational workflow for discovering a
 
 ---
 
-## Step 3: Filter for Clonal Evaluation Studies
+## Step 5: Filter for Clonal Evaluation Studies
+
+**Assistant:** Since I know `studyTypes` is a valid search parameter, I'll add that filter to narrow down to just Clonal Evaluation studies.
 
 **Tool Call:**
 
@@ -290,7 +377,7 @@ This document demonstrates a realistic conversational workflow for discovering a
 
 ---
 
-## Step 5: Examine Sample Data
+## Step 6: Examine Sample Data
 
 **Sample Observations (first 15 rows):**
 
@@ -314,7 +401,7 @@ This document demonstrates a realistic conversational workflow for discovering a
 
 ---
 
-## Step 6: Download Data
+## Step 7: Download Data
 
 **Get Download Link:**
 

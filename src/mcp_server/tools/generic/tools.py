@@ -14,24 +14,75 @@ from client.capabilities.helpers import (
 from client.helpers import fetch_paginated, search_paginated
 
 
-def register_discovery_tools(server, capabilities):
-  @server.tool()
-  def describe_server_capabilities(context: Context):
-    """
-    Return a structured JSON of server capabilities
-    """
-    return {
-      'server': capabilities.server_name,
-      'session_id': context.session_id,
-      'modules': {
-        name: {
-          'endpoints': list(m.endpoints.keys()),
+
+def register_discovery_tools(server, capabilities: ServerCapabilities):
+    
+    @server.tool()
+    def describe_server_capabilities():
+        """
+        Get server capabilities in consolidated, LLM-friendly format.
+        
+        **READ THIS FIRST** to understand available services and usage patterns.
+        
+        Returns:
+            Consolidated view of services
+        """
+        return capabilities.to_llm_format()
+    
+    @server.tool()
+    def get_search_parameters(service: str) -> dict:
+        """
+        Get valid search parameters for a specific service.
+        
+        Use this before calling brapi_search() to see what filters are available.
+        
+        Args:
+            service: Service name (e.g., 'studies', 'germplasm', 'observations')
+        
+        Returns:
+            Schema of valid search parameters with types and descriptions
+        
+        Example:
+            params = get_search_parameters('studies')
+            # Returns: {"studyNames": {"type": "array", ...}, "active": {"type": "boolean", ...}}
+            
+            # Then use in search:
+            brapi_search('studies', search_params={'studyNames': ['Trial2024'], 'active': True})
+        """
+        service_info = capabilities.get_service_info(service)
+        
+        if not service_info:
+            return {
+                "error": f"Service '{service}' not found",
+                "hint": "Use describe_server_capabilities() to see available services"
+            }
+        
+        if not service_info.get("supports_search"):
+            return {
+                "error": f"Service '{service}' does not support search",
+                "hint": f"Use brapi_get('{service}') to list all resources instead"
+            }
+        
+        # Get search parameters from input_schema
+        search_params = service_info.get("search_parameters")
+        
+        if not search_params:
+            return {
+                "service": service,
+                "supports_search": True,
+                "parameters": "No parameter schema available from server",
+                "hint": "Try common BrAPI parameters like 'externalReferenceIDs', 'externalReferenceSources'"
+            }
+        
+        # Format parameters in a helpful way
+        return {
+            "service": service,
+            "search_endpoint": f"search/{service}",
+            "parameters": search_params,
+            "usage_example": f"brapi_search('{service}', search_params={{...}})",
+            "note": "All parameters are optional. Combine multiple parameters to narrow results."
         }
-        for name, m in capabilities.modules.items()
-      },
-    }
-
-
+    
 def register_generic_tools(
   server: FastMCP, client: BrapiClient, capabilities: ServerCapabilities, get_session_cache: Callable
 ):
