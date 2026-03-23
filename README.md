@@ -1,6 +1,6 @@
 <div align="center">
 
-# BrAPI MCP Server
+# <img src="images/brapilogo.png" alt="BrAPI Logo" width="50" /> BrAPI MCP Server
 
 </div>
 
