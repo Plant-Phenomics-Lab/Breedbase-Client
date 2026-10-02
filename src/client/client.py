@@ -1,8 +1,7 @@
-import requests
 from typing import Dict, Any
 from pathlib import Path
 import sys
-from utils import logger
+from utils import logger  # noqa: F401 -- import configures logging handlers
 import logging
 from authlib.integrations.base_client.errors import InvalidTokenError
 from client.auth.sgn_auth import create_sgn_session
@@ -15,11 +14,11 @@ class BrapiClient:
     self.username = config.username
     self.password = config.password
     self.base_url = config.base_url.rstrip('/')
-    
+
     # Normalize auth type to lowercase for comparison
     self._auth_type = config.authtype.lower() if config.authtype else None
-    
-    if self._auth_type == "sgn":
+
+    if self._auth_type == 'sgn':
       self.session = create_sgn_session(
         base_url=self.base_url,
         auto_login=True,
@@ -35,27 +34,27 @@ class BrapiClient:
   def _try_reauth(self) -> bool:
     """
     Attempt re-authentication once for SGN sessions.
-    
+
     SGN servers don't support OAuth2 refresh tokens, so we must
     re-authenticate with username/password when the token expires.
-    
+
     Returns:
         True if re-auth successful, False otherwise
     """
-    if self._auth_type != "sgn":
+    if self._auth_type != 'sgn':
       return False
-    
+
     if not hasattr(self.session, 'login') or not self.username or not self.password:
-      logging.info("Re-auth skipped: missing login method or credentials")
+      logging.info('Re-auth skipped: missing login method or credentials')
       return False
-    
+
     try:
-      logging.info("Token expired, attempting re-authentication...")
+      logging.info('Token expired, attempting re-authentication...')
       self.session.login(self.username, self.password)
-      logging.info("Re-authentication successful")
+      logging.info('Re-authentication successful')
       return True
     except Exception as e:
-      logging.error(f"Re-authentication failed: {e}")
+      logging.error(f'Re-authentication failed: {e}')
       return False
 
   def _get(self, path: str, params=None) -> Dict[str, Any]:
@@ -95,7 +94,7 @@ class BrapiClient:
       # sys.stderr.write(f"{resp.json()}")
       return resp.json()
     except Exception as e:
-      sys.stderr.write(f"Error fetching serverinfo from {url}: {e}\n")
+      sys.stderr.write(f'Error fetching serverinfo from {url}: {e}\n')
       return {}
 
   def download_file(self, url: str, output_path: Path) -> bool:

@@ -195,7 +195,5 @@ Then connect the server. Remember to use the port you configured.
 
 ## Contributing
 
-This project is under active development. Contributions and feedback are welcome!
-
-- The current branch is `main`. Feel free to ignore everything else :). 
+This project is under active development. Contributions and feedback are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and the pull request workflow.
 

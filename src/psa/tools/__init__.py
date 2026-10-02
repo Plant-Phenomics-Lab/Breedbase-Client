@@ -6,8 +6,8 @@ from .observations import register_observation_tools
 from .germplasm import register_germplasm_tools
 
 __all__ = [
-    "register_discovery_tools",
-    "register_study_tools",
-    "register_observation_tools",
-    "register_germplasm_tools",
+  'register_discovery_tools',
+  'register_study_tools',
+  'register_observation_tools',
+  'register_germplasm_tools',
 ]

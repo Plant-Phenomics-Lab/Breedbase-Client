@@ -1,6 +1,6 @@
 from typing import Optional, Callable
-from pathlib import Path
 from fastmcp import FastMCP, Context
+
 # from src.mcp_server.session.result_cache import ResultCache
 from config.type import BrapiServerConfig
 import json
@@ -151,7 +151,7 @@ def register_result_cache_tools(server: FastMCP, get_session_cache: Callable, co
     Get instructions for downloading a result via HTTP.
 
     Returns URLs and examples for various download methods.
-    
+
     TODO: Add support for downloading image collections as zip archives.
           Images are currently downloaded to local cache but not served via HTTP.
           Need to implement zip_images_directory() to bundle multiple images + metadata CSV

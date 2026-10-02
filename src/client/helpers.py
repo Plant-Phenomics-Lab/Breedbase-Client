@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 
 from client.client import BrapiClient
-from config.type import BrapiServerConfig
 
 
 def fetch_paginated(
@@ -164,7 +163,9 @@ def _extract_data(result_obj: Any) -> List[Dict]:
 
 
 def download_images_batch(
-  client: BrapiClient, output_dir: str, image_records: List[Dict],
+  client: BrapiClient,
+  output_dir: str,
+  image_records: List[Dict],
 ) -> Tuple[List[Dict], List[Dict]]:
   """
   Download a batch of images to output directory.
@@ -188,16 +189,16 @@ def download_images_batch(
     image_name = record.get('imageName')
     image_id = record.get('imageDbId', f'unknown_{idx}')
     image_url = record.get('imageURL')
-    
+
     if not image_name or image_name == 'None':
       image_name = image_id or record.get('imageFileName') or f'image_{idx}'
-      
+
       # Add extension from URL if using imageDbId and name doesn't have one
       if image_name == image_id and '.' not in str(image_name) and image_url:
         ext = Path(image_url).suffix  # Extract extension from URL (e.g., '.jpg')
         if ext:
-          image_name = f"{image_name}{ext}"
-    
+          image_name = f'{image_name}{ext}'
+
     image_name = str(image_name)
 
     if not image_url:
@@ -211,7 +212,7 @@ def download_images_batch(
       continue
 
     # Sanitize filename
-    safe_name = sanitize_filename(filename=image_name,default_name=image_id)
+    safe_name = sanitize_filename(filename=image_name, default_name=image_id)
     image_path = output_dir / safe_name
 
     # Client handles the actual download

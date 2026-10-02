@@ -24,17 +24,14 @@ BRAPI_BASE_URL=https://sweetpotatobase.org/brapi/v2 PYTHONPATH=src uv run python
 # Run HTTP server via Docker
 docker compose up -d
 
-# Run tests
-pytest tests/mcp.py
-
-# Update test snapshots
-pytest tests/mcp.py --inline-snapshot=fix,create
+# Run tests (requires network; builds server against BASE_URL)
+uv run pytest
 
 # Format code
-ruff format .
+uv run ruff format .
 
 # Lint code
-ruff check .
+uv run ruff check .
 ```
 
 ## Environment Variables
@@ -100,4 +97,4 @@ Simplified alternative with cleaner tool set:
 
 ## Testing
 
-Tests use pytest-asyncio with FastMCP's async client transport. Test file: `tests/mcp.py`
+Tests use pytest-asyncio with FastMCP's in-memory client. Test file: `tests/test_server.py` (update `EXPECTED_TOOLS` when adding or renaming tools). See `CONTRIBUTING.md` for contributor workflow.

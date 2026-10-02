@@ -1,0 +1,41 @@
+name: Bug report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Include the tool call or prompt that triggered the problem, if relevant.
+    validations:
+      required: true
+  - type: input
+    id: base-url
+    attributes:
+      label: BrAPI server (BASE_URL)
+      placeholder: https://sweetpotatobase.org/brapi/v2
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Server mode
+      options: [STDIO, HTTP / Docker]
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Desktop, VS Code, Claude Code, ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Remove any usernames, passwords, or tokens before pasting.
+      render: shell

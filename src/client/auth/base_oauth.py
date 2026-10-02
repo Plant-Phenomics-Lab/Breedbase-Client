@@ -1,9 +1,6 @@
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oauth2.rfc6749 import OAuth2Token
-import requests
-import time
 import json
-import getpass
 from pathlib import Path
 from typing import Optional, Dict, Callable
 import os
@@ -23,6 +20,8 @@ Future support planned:
     - OAuth2 implicit flow
 
 """
+
+
 class BrAPIOAuth2Session(OAuth2Session):
   """
   Base OAuth2 session for BrAPI authentication.
@@ -157,4 +156,3 @@ class BrAPIOAuth2Session(OAuth2Session):
         login_callback()
       else:
         raise RuntimeError('Not authenticated. Please call login() method first.')
-

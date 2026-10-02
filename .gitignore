@@ -68,3 +68,9 @@ htmlcov/
 
 # Logs
 logs
+# Claude Code local settings
+.claude/settings.local.json
+
+# Server runtime output (named after NAME / BASE_URL)
+/sweetpotatobase
+/brapi_v2
