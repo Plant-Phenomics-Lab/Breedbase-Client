@@ -1,4 +1,3 @@
-
 from authlib.oauth2.rfc6749 import OAuth2Token
 import requests
 import time
@@ -8,6 +7,8 @@ from typing import Optional, Dict
 
 
 from .base_oauth import BrAPIOAuth2Session
+
+
 class SGNBrAPIOAuth2(BrAPIOAuth2Session):
   """
   OAuth2 session for SGN-based BrAPI servers (password grant flow).
@@ -64,9 +65,7 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
     )
     self.login_time = None
 
-  def login(
-    self, username: Optional[str] = None, password: Optional[str] = None
-  ) -> Dict:
+  def login(self, username: Optional[str] = None, password: Optional[str] = None) -> Dict:
     """
     Authenticate with username and password (OAuth2 password grant).
 
@@ -101,11 +100,11 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
     # Validate credentials were provided
     if not username or not password:
       raise ValueError('Username and password must be provided')
-    
+
     # Construct SGN's non-standard format
     # Note: This is NOT standard OAuth2, but required by SGN servers
     payload = {'grant_type': 'password', 'password': password, 'username': username}
-  
+
     # Make authentication request
     response = requests.post(self.token_url, data=payload)
 
@@ -170,9 +169,7 @@ class SGNBrAPIOAuth2(BrAPIOAuth2Session):
     """
     Check before requests if token has expired.
     """
-    if self.login_time and time.time() > self.login_time + self.token.get(
-      'expires_in', 0
-    ):
+    if self.login_time and time.time() > self.login_time + self.token.get('expires_in', 0):
       print('[WARNING] Token has expired, logging in again.')
       self.logout()
       self.login()

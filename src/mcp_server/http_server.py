@@ -5,6 +5,7 @@ import mimetypes
 from config.type import BrapiServerConfig
 from mcp_server.mcp_server import BrapiMcpServer
 
+
 class BrapiMcpHttpServer:
   _instance = None
 

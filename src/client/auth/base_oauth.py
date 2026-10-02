@@ -20,6 +20,8 @@ Future support planned:
     - OAuth2 implicit flow
 
 """
+
+
 class BrAPIOAuth2Session(OAuth2Session):
   """
   Base OAuth2 session for BrAPI authentication.
@@ -154,4 +156,3 @@ class BrAPIOAuth2Session(OAuth2Session):
         login_callback()
       else:
         raise RuntimeError('Not authenticated. Please call login() method first.')
-

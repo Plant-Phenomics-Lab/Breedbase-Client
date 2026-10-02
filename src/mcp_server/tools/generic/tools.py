@@ -14,75 +14,75 @@ from client.capabilities.helpers import (
 from client.helpers import fetch_paginated, search_paginated
 
 
-
 def register_discovery_tools(server, capabilities: ServerCapabilities):
-    
-    @server.tool()
-    def describe_server_capabilities():
-        """
-        Get server capabilities in consolidated, LLM-friendly format.
-        
-        **READ THIS FIRST** to understand available services and usage patterns.
-        
-        Returns:
-            Consolidated view of services
-        """
-        return capabilities.to_llm_format()
-    
-    @server.tool()
-    def get_search_parameters(service: str) -> dict:
-        """
-        Get valid search parameters for a specific service.
-        
-        Use this before calling brapi_search() to see what filters are available.
-        
-        Args:
-            service: Service name (e.g., 'studies', 'germplasm', 'observations')
-        
-        Returns:
-            Schema of valid search parameters with types and descriptions
-        
-        Example:
-            params = get_search_parameters('studies')
-            # Returns: {"studyNames": {"type": "array", ...}, "active": {"type": "boolean", ...}}
-            
-            # Then use in search:
-            brapi_search('studies', search_params={'studyNames': ['Trial2024'], 'active': True})
-        """
-        service_info = capabilities.get_service_info(service)
-        
-        if not service_info:
-            return {
-                "error": f"Service '{service}' not found",
-                "hint": "Use describe_server_capabilities() to see available services"
-            }
-        
-        if not service_info.get("supports_search"):
-            return {
-                "error": f"Service '{service}' does not support search",
-                "hint": f"Use brapi_get('{service}') to list all resources instead"
-            }
-        
-        # Get search parameters from input_schema
-        search_params = service_info.get("search_parameters")
-        
-        if not search_params:
-            return {
-                "service": service,
-                "supports_search": True,
-                "parameters": "No parameter schema available from server",
-                "hint": "Try common BrAPI parameters like 'externalReferenceIDs', 'externalReferenceSources'"
-            }
-        
-        # Format parameters in a helpful way
-        return {
-            "service": service,
-            "search_endpoint": f"search/{service}",
-            "parameters": search_params,
-            "usage_example": f"brapi_search('{service}', search_params={{...}})",
-            "note": "All parameters are optional. Combine multiple parameters to narrow results."
-        }
-    
+
+  @server.tool()
+  def describe_server_capabilities():
+    """
+    Get server capabilities in consolidated, LLM-friendly format.
+
+    **READ THIS FIRST** to understand available services and usage patterns.
+
+    Returns:
+        Consolidated view of services
+    """
+    return capabilities.to_llm_format()
+
+  @server.tool()
+  def get_search_parameters(service: str) -> dict:
+    """
+    Get valid search parameters for a specific service.
+
+    Use this before calling brapi_search() to see what filters are available.
+
+    Args:
+        service: Service name (e.g., 'studies', 'germplasm', 'observations')
+
+    Returns:
+        Schema of valid search parameters with types and descriptions
+
+    Example:
+        params = get_search_parameters('studies')
+        # Returns: {"studyNames": {"type": "array", ...}, "active": {"type": "boolean", ...}}
+
+        # Then use in search:
+        brapi_search('studies', search_params={'studyNames': ['Trial2024'], 'active': True})
+    """
+    service_info = capabilities.get_service_info(service)
+
+    if not service_info:
+      return {
+        'error': f"Service '{service}' not found",
+        'hint': 'Use describe_server_capabilities() to see available services',
+      }
+
+    if not service_info.get('supports_search'):
+      return {
+        'error': f"Service '{service}' does not support search",
+        'hint': f"Use brapi_get('{service}') to list all resources instead",
+      }
+
+    # Get search parameters from input_schema
+    search_params = service_info.get('search_parameters')
+
+    if not search_params:
+      return {
+        'service': service,
+        'supports_search': True,
+        'parameters': 'No parameter schema available from server',
+        'hint': "Try common BrAPI parameters like 'externalReferenceIDs', 'externalReferenceSources'",
+      }
+
+    # Format parameters in a helpful way
+    return {
+      'service': service,
+      'search_endpoint': f'search/{service}',
+      'parameters': search_params,
+      'usage_example': f"brapi_search('{service}', search_params={{...}})",
+      'note': 'All parameters are optional. Combine multiple parameters to narrow results.',
+    }
+
+
 def register_generic_tools(
   server: FastMCP, client: BrapiClient, capabilities: ServerCapabilities, get_session_cache: Callable
 ):
@@ -99,7 +99,7 @@ def register_generic_tools(
     sub: Optional[str] = None,
     # params: Optional[Dict] = None,
     max_results: int = 100,
-    session_id: Optional[str] = None, 
+    session_id: Optional[str] = None,
     context: Context = None,
   ) -> dict:
     """
@@ -119,16 +119,16 @@ def register_generic_tools(
         brapi_get('studies', max_results=9999)
         brapi_get('studies', db_id='study123')
         brapi_get('variantsets', db_id='vs1', sub='calls')
-    
-    Tips: To Get ALL Observations, set max_results very high (9999). 
+
+    Tips: To Get ALL Observations, set max_results very high (9999).
 
     Returns:
         Metadata about the query and result_id for accessing data
     """
     # TODO :: Return complete data in any case?
     return_data = False
-    
-    # Since searchign with params is iffy for get, this is disabled. 
+
+    # Since searchign with params is iffy for get, this is disabled.
     params = {}
 
     # Check capabilities
@@ -167,7 +167,7 @@ def register_generic_tools(
         as_dataframe=False,
       )
       max_results = min(max_results, int(initial_metadata.get('totalCount', 1000)))
-      
+
       max_pages = max_results // 100 + 1
 
       df, metadata = fetch_paginated(
@@ -186,75 +186,68 @@ def register_generic_tools(
       result_cache, active_session_id = get_session_cache(context, session_id)
 
       query_hash = hashlib.md5(
-          json.dumps({
-              "service": service,
-              "db_id": db_id,
-              "sub": sub
-          }, sort_keys=True).encode()
+        json.dumps({'service': service, 'db_id': db_id, 'sub': sub}, sort_keys=True).encode()
       ).hexdigest()[:8]
-      result_id = f"{service}_{query_hash}"
+      result_id = f'{service}_{query_hash}'
 
       result_cache.save_result(
-          result_id=result_id,
-          session_id=active_session_id,
-          data=df,
-          metadata={
-              "query": {
-                  "service": service,
-                  "endpoint": endpoint,
-                  "db_id": db_id,
-                  "sub": sub,
-                  # "params": params
-              },
-              "endpoint": endpoint
+        result_id=result_id,
+        session_id=active_session_id,
+        data=df,
+        metadata={
+          'query': {
+            'service': service,
+            'endpoint': endpoint,
+            'db_id': db_id,
+            'sub': sub,
+            # "params": params
           },
-          format='csv'
+          'endpoint': endpoint,
+        },
+        format='csv',
       )
 
       response = {
-          # "result_id": result_id,
-          # "session_id": active_session_id,
-          # "query": {
-          #     "service": service,
-          #     "db_id": db_id
-          # },
-          "summary": {
-              "total_count": metadata.get('totalCount', len(df)),
-              "returned_count": len(df),
-              "columns": list(df.columns),
-              "column_count": len(df.columns),
-              "truncated": metadata.get('totalCount', 0) > max_results
+        # "result_id": result_id,
+        # "session_id": active_session_id,
+        # "query": {
+        #     "service": service,
+        #     "db_id": db_id
+        # },
+        'summary': {
+          'total_count': metadata.get('totalCount', len(df)),
+          'returned_count': len(df),
+          'columns': list(df.columns),
+          'column_count': len(df.columns),
+          'truncated': metadata.get('totalCount', 0) > max_results,
+        },
+        'access': {
+          'resource': f'brapi://results/{active_session_id}/{result_id}',
+          'tools': {
+            'get_summary': f"get_result_summary('{active_session_id}','{result_id}')",
+            'load_result': f"load_result('{active_session_id}','{result_id}', limit=100)",
           },
-          "access": {
-              "resource": f"brapi://results/{active_session_id}/{result_id}",
-              "tools": {
-                  "get_summary": f"get_result_summary('{active_session_id}','{result_id}')",
-                  "load_result": f"load_result('{active_session_id}','{result_id}', limit=100)",
-              }
-          },
-          "hint": f"Data saved to server. Use resource brapi://results/{active_session_id}/{result_id} or load_result('{active_session_id}','{result_id}') to access."
+        },
+        'hint': f"Data saved to server. Use resource brapi://results/{active_session_id}/{result_id} or load_result('{active_session_id}','{result_id}') to access.",
       }
-      
+
       # Optionally include data (for small results)
       if return_data:
-          response["data"] = df.to_dict(orient='records')
-          response["warning"] = "Data included in response - use return_data=False for large datasets"
-      
+        response['data'] = df.to_dict(orient='records')
+        response['warning'] = 'Data included in response - use return_data=False for large datasets'
+
       return response
     except Exception as e:
       return {'error': str(e), 'service': service, 'endpoint': endpoint}
 
   @server.tool()
-  def brapi_search(service: str, 
-                   search_params: Dict, 
-                   max_results: int = 100, 
-                   session_id: Optional[str] = None, 
-                   context: Context = None) -> dict:
-
+  def brapi_search(
+    service: str, search_params: Dict, max_results: int = 100, session_id: Optional[str] = None, context: Context = None
+  ) -> dict:
     """
     **GENERIC FALLBACK** - Use specific search tools first if available!
-    Tips: 
-    - Please be sure of your search parameters before searching. If you are unsure of parameter values run a GET first. 
+    Tips:
+    - Please be sure of your search parameters before searching. If you are unsure of parameter values run a GET first.
     - To Get ALL Observations, set max_results very high (9999).
     - search by DbID whenever possible. "observationVariableDbIds": ["76552"] is always better than "observationVariableNamess": ["long, complicated description"]
 
@@ -317,56 +310,47 @@ def register_generic_tools(
       df = df.dropna(axis=1, how='all')
 
       query_hash = hashlib.md5(
-                json.dumps({
-                    "service": service,
-                    "search_params": search_params
-                }, sort_keys=True).encode()
-            ).hexdigest()[:8]
-      
-      result_id = f"search_{service}_{query_hash}"
+        json.dumps({'service': service, 'search_params': search_params}, sort_keys=True).encode()
+      ).hexdigest()[:8]
+
+      result_id = f'search_{service}_{query_hash}'
 
       result_cache.save_result(
-          session_id= active_session_id,
-          result_id=result_id,
-          data=df,
-          metadata={
-              "query": {
-                  "service": service,
-                  "search_params": search_params,
-                  "search": True
-              }
-          },
-          format='csv'
+        session_id=active_session_id,
+        result_id=result_id,
+        data=df,
+        metadata={'query': {'service': service, 'search_params': search_params, 'search': True}},
+        format='csv',
       )
 
       response = {
-          # "result_id": result_id,
-          # 'session_id': active_session_id,
-          # "query": {
-          #     "service": service,
-          #     "search_params": search_params
-          # },
-          "summary": {
-              "total_matches": metadata.get('totalCount', len(df)),
-              "returned_count": len(df),
-              "columns": list(df.columns),
-              "column_count": len(df.columns),
-              "truncated": metadata.get('totalCount', 0) > max_results
+        # "result_id": result_id,
+        # 'session_id': active_session_id,
+        # "query": {
+        #     "service": service,
+        #     "search_params": search_params
+        # },
+        'summary': {
+          'total_matches': metadata.get('totalCount', len(df)),
+          'returned_count': len(df),
+          'columns': list(df.columns),
+          'column_count': len(df.columns),
+          'truncated': metadata.get('totalCount', 0) > max_results,
+        },
+        'access': {
+          'resource': f'brapi://results/{active_session_id}/{result_id}',
+          'tools': {
+            'get_summary': f"get_result_summary('{active_session_id}','{result_id}')",
+            'load_sample': f"load_result('{active_session_id}','{result_id}', limit=100)",
+            'load_columns': f"load_result('{active_session_id}','{result_id}', columns=['col1', 'col2'])",
           },
-          "access": {
-              "resource": f"brapi://results/{active_session_id}/{result_id}",
-              "tools": {
-                  "get_summary": f"get_result_summary('{active_session_id}','{result_id}')",
-                  "load_sample": f"load_result('{active_session_id}','{result_id}', limit=100)",
-                  "load_columns": f"load_result('{active_session_id}','{result_id}', columns=['col1', 'col2'])"
-              }
-          },
-          "hint": f"Data saved to server. Access via resource or load_result('{result_id}')"
+        },
+        'hint': f"Data saved to server. Access via resource or load_result('{result_id}')",
       }
       if return_data:
-        response["data"] = df.to_dict(orient='records')
-        response["warning"] = "Data included - use return_data=False for large datasets"
-      
+        response['data'] = df.to_dict(orient='records')
+        response['warning'] = 'Data included - use return_data=False for large datasets'
+
       return response
     except Exception as e:
       return {'error': str(e), 'service': service}

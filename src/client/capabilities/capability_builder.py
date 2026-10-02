@@ -4,13 +4,14 @@ from client.capabilities.type import ServerCapabilities, ModuleCapability, Endpo
 from client.client import BrapiClient
 from pathlib import Path
 
+
 class CapabilityBuilder:
   @classmethod
   def from_server(cls, client: BrapiClient, server_name: str):
     serverinfo = client.fetch_serverinfo()
     result = serverinfo.get('result', {})
     calls = result.get('calls', []) or []
-    
+
     metadata = pd.read_csv(Path(__file__).parent.parent / 'data' / 'metadata.csv')
 
     caps = ServerCapabilities(server_name=server_name)
@@ -30,9 +31,9 @@ class CapabilityBuilder:
       # Prefer category from metadata
       row = metadata.loc[metadata['service'] == path]
       if not row.empty:
-          category = row.iloc[0]['category']
+        category = row.iloc[0]['category']
       else:
-          category = None
+        category = None
 
       if category:
         module = category.lower()
@@ -49,7 +50,7 @@ class CapabilityBuilder:
         data_types=data_types,
         module=module,
         description=row.iloc[0]['description'],
-        input_schema=row.iloc[0]['dictionary_loc']
+        input_schema=row.iloc[0]['dictionary_loc'],
       )
 
       # register endpoint

@@ -29,37 +29,37 @@ from psa.tools.germplasm import register_germplasm_tools
 
 
 def create_server() -> FastMCP:
-    """Create and configure the PSA MCP server with all tools."""
-    # Load configuration from environment
-    config = get_config()
+  """Create and configure the PSA MCP server with all tools."""
+  # Load configuration from environment
+  config = get_config()
 
-    # Initialize the global BrAPI client
-    client = init_client(config)
+  # Initialize the global BrAPI client
+  client = init_client(config)
 
-    # Create the MCP server
-    server = FastMCP("PSA BrAPI Server")
+  # Create the MCP server
+  server = FastMCP('PSA BrAPI Server')
 
-    # Register all tool groups
-    register_discovery_tools(server, client)
-    register_study_tools(server, client)
-    register_observation_tools(server, client, config)
-    register_germplasm_tools(server, client)
+  # Register all tool groups
+  register_discovery_tools(server, client)
+  register_study_tools(server, client)
+  register_observation_tools(server, client, config)
+  register_germplasm_tools(server, client)
 
-    return server
+  return server
 
 
 def main():
-    """Run the PSA MCP server in STDIO mode."""
-    try:
-        server = create_server()
-        server.run()
-    except ValueError as e:
-        sys.stderr.write(f"Configuration error: {e}\n")
-        sys.exit(1)
-    except Exception as e:
-        sys.stderr.write(f"Server error: {e}\n")
-        sys.exit(1)
+  """Run the PSA MCP server in STDIO mode."""
+  try:
+    server = create_server()
+    server.run()
+  except ValueError as e:
+    sys.stderr.write(f'Configuration error: {e}\n')
+    sys.exit(1)
+  except Exception as e:
+    sys.stderr.write(f'Server error: {e}\n')
+    sys.exit(1)
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+  main()

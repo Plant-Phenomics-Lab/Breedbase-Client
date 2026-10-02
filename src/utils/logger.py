@@ -7,14 +7,16 @@ from config.value import config
 
 LOG_CONFIG = {
   'dir': config.log_dir,
-  'file_name': f"{config.name}.log",
+  'file_name': f'{config.name}.log',
   'default_log_level': 'debug',
   'format': '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s',
   'backup_count': 30,  # Keep 30 days of logs
 }
 
+
 def string_to_log_level(level: str):
   return logging._nameToLevel.get(level.upper(), logging.INFO)
+
 
 log_dir = Path(LOG_CONFIG['dir'])
 log_dir.mkdir(exist_ok=True)
@@ -27,18 +29,12 @@ log_format = LOG_CONFIG['format']
 
 # Configure root logger with rotation
 handler = TimedRotatingFileHandler(
-    log_file,
-    when="midnight",
-    interval=1,
-    backupCount=LOG_CONFIG['backup_count'],
-    encoding='utf-8'
+  log_file, when='midnight', interval=1, backupCount=LOG_CONFIG['backup_count'], encoding='utf-8'
 )
 handler.setFormatter(logging.Formatter(log_format))
 
-logging.basicConfig(
-  level=default_log_level,
-  handlers=[handler]
-)
+logging.basicConfig(level=default_log_level, handlers=[handler])
+
 
 def with_logging(level: str = 'info'):
   """

@@ -58,7 +58,7 @@ def register_image_tools(
       return {'success': False, 'error': 'Images endpoint not supported by this server'}
 
     try:
-      ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+      ts = datetime.now().strftime('%Y%m%d_%H%M%S')
       output_path = config.downloads_dir / ts
       output_path.mkdir(parents=True, exist_ok=True)
 
@@ -95,11 +95,8 @@ def register_image_tools(
       # Convert to list of dicts for utility
       image_records = df.to_dict(orient='records')
 
-
       # Download images (utility orchestrates, client does HTTP)
-      downloaded, failed = download_images_batch(
-        client=client, output_dir=output_path, image_records=image_records
-      )
+      downloaded, failed = download_images_batch(client=client, output_dir=output_path, image_records=image_records)
 
       # Save metadata CSV
       metadata_path = output_path / 'images_metadata.csv'
