@@ -1,7 +1,5 @@
 import time
-import logging
 import sys
-from pathlib import Path
 from config.type import BrapiServerConfig
 
 def cleanup_old_files(config: BrapiServerConfig, days: int = 30):

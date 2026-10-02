@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 
 from client.client import BrapiClient
-from config.type import BrapiServerConfig
 
 
 def fetch_paginated(

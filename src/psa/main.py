@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastmcp import FastMCP
 
 from psa.config import get_config
-from psa.client import init_client, get_client
+from psa.client import init_client
 from psa.tools.discovery import register_discovery_tools
 from psa.tools.studies import register_study_tools
 from psa.tools.observations import register_observation_tools

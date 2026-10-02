@@ -1,9 +1,6 @@
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oauth2.rfc6749 import OAuth2Token
-import requests
-import time
 import json
-import getpass
 from pathlib import Path
 from typing import Optional, Dict, Callable
 import os

@@ -1,8 +1,7 @@
-import requests
 from typing import Dict, Any
 from pathlib import Path
 import sys
-from utils import logger
+from utils import logger  # noqa: F401 -- import configures logging handlers
 import logging
 from authlib.integrations.base_client.errors import InvalidTokenError
 from client.auth.sgn_auth import create_sgn_session
